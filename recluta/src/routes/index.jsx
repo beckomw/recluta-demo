@@ -34,7 +34,7 @@ export default function Home() {
   return (
 
    
-    <main>
+    <main class="backy">
       <Title>Recluta!</Title>
       <h2>Hello {user}</h2>
 
@@ -69,9 +69,7 @@ export default function Home() {
                   <Dashboard />    {/* Leave this for a service or function later.   */}
                   
           </div> 
-          <div class="backy">
        
-          </div>
 
       
       
