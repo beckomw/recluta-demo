@@ -41,6 +41,11 @@ export default function Home() {
           Here are the priorities for today!   
           </h3> 
 
+          <div> 
+
+                  <Dashboard />    {/* Leave this for a service or function later.   */}
+
+          </div> 
 
 
       
@@ -56,7 +61,7 @@ export default function Home() {
 
 
 
-<Dashboard />    {/* Leave this for a service or function later.   */}
+
 
 
 
