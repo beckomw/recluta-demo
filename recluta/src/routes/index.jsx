@@ -6,6 +6,7 @@ import Dashboard from "~/components/Dashboard";
 
 
 
+
 export default function Home() {
   let user = "wayne"; 
 
@@ -37,16 +38,40 @@ export default function Home() {
       <Title>Recluta!</Title>
       <h2>Hello {user}</h2>
 
+
+
+      
           <h3> 
           Here are the priorities for today!   
           </h3> 
 
+      
+
+          
+
+
+
           <div> 
 
+
+                        
+
+
+                
+
+
+
+
+
+
+
+
                   <Dashboard />    {/* Leave this for a service or function later.   */}
-
+                  
           </div> 
-
+          <div class="backy">
+       
+          </div>
 
       
       
@@ -62,7 +87,7 @@ export default function Home() {
 
 
 
-
+   
 
 
     </main>
