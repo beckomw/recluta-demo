@@ -8,8 +8,8 @@
     color: white;
     padding: var(--spacing-2xl);
     margin-bottom: var(--spacing-xl);
-    border: 1px solid var(--startup-blue-light);
-    box-shadow: 0 8px 32px rgba(44, 61, 85, 0.3);
+    border: 1px solid var(--startup-purple);
+    box-shadow: 0 8px 32px rgba(139, 92, 246, 0.4), var(--shadow-glow-lg);
     position: relative;
     overflow: hidden;
 }
@@ -132,10 +132,10 @@
 
 .xp-bar {
     height: 100%;
-    background: linear-gradient(90deg, var(--startup-blue-light) 0%, var(--success-color) 100%);
+    background: linear-gradient(90deg, var(--startup-purple) 0%, var(--startup-teal) 50%, var(--success-color) 100%);
     border-radius: 10px;
     transition: width 0.6s cubic-bezier(0.4, 0, 0.2, 1);
-    box-shadow: 0 2px 8px rgba(83, 98, 113, 0.3);
+    box-shadow: 0 2px 8px rgba(139, 92, 246, 0.5), var(--shadow-glow);
 }
 
 /* Stats Grid */
@@ -156,16 +156,16 @@
 
 .stat-card:hover {
     transform: translateY(-4px);
-    box-shadow: 0 8px 30px rgba(83, 98, 113, 0.3);
-    border-color: var(--startup-blue-light);
+    box-shadow: 0 8px 30px rgba(139, 92, 246, 0.4), var(--shadow-glow);
+    border-color: var(--startup-purple);
 }
 
 .stat-card.stat-highlight {
     background: linear-gradient(135deg, var(--bg-tertiary) 0%, var(--bg-elevated) 100%);
-    border-color: var(--startup-blue-light);
+    border-color: var(--startup-pink);
     border-left: 4px solid;
     border-image: var(--gradient-startup) 1;
-    box-shadow: 0 4px 20px rgba(44, 61, 85, 0.2);
+    box-shadow: 0 4px 20px rgba(236, 72, 153, 0.3), var(--shadow-glow-pink);
 }
 
 .stat-header {
@@ -220,8 +220,8 @@
 
 .best-skill-card:hover {
     transform: translateX(6px);
-    border-color: var(--startup-blue-light);
-    box-shadow: 0 4px 20px rgba(83, 98, 113, 0.2);
+    border-color: var(--startup-teal);
+    box-shadow: 0 4px 20px rgba(20, 184, 166, 0.3), var(--shadow-glow-teal);
     background: linear-gradient(135deg, var(--bg-elevated) 0%, var(--bg-tertiary) 100%);
 }
 
@@ -337,11 +337,11 @@
 }
 
 .achievement-badge.unlocked {
-    border-color: var(--startup-blue-light);
+    border-color: var(--startup-orange);
     background: linear-gradient(135deg, var(--bg-tertiary) 0%, var(--bg-elevated) 100%);
     border-left: 4px solid;
     border-image: var(--gradient-startup) 1;
-    box-shadow: 0 4px 20px rgba(44, 61, 85, 0.2);
+    box-shadow: 0 4px 20px rgba(249, 115, 22, 0.3), var(--shadow-glow-orange);
 }
 
 .achievement-badge.locked {
@@ -405,7 +405,7 @@
 .activity-item:hover {
     background: linear-gradient(135deg, var(--bg-elevated) 0%, var(--bg-tertiary) 100%);
     transform: translateX(6px);
-    box-shadow: 0 4px 15px rgba(83, 98, 113, 0.2);
+    box-shadow: 0 4px 15px rgba(139, 92, 246, 0.3), var(--shadow-glow);
 }
 
 .activity-icon {
