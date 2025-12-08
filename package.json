@@ -1,0 +1,19 @@
+{
+    "name": "recluta",
+    "version": "1.0.0",
+    "description": "Job Application Readiness Platform - Assess your competitiveness before applying",
+    "main": "index.html",
+    "scripts": {
+        "dev": "npx serve",
+        "deploy": "vercel"
+    },
+    "keywords": [
+        "job-search",
+        "resume",
+        "career",
+        "recruitment",
+        "skills-analysis"
+    ],
+    "author": "",
+    "license": "MIT"
+}

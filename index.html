@@ -1,0 +1,491 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description"
+    content="Know if you're competitive before you apply - Compare your resume to job postings and analyze your readiness">
+  <title>Application Readiness Platform - Know Before You Apply</title>
+
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+  <!-- Styles -->
+  <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" href="dashboard-styles.css">
+
+  <!-- PDF.js Library -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+</head>
+
+<body>
+  <!-- Animated Background -->
+  <div class="animated-bg">
+    <div class="blob blob-1"></div>
+    <div class="blob blob-2"></div>
+    <div class="blob blob-3"></div>
+  </div>
+
+  <!-- Header -->
+  <header class="header">
+    <div class="container">
+      <div class="header-content">
+        <h1 class="logo">Recluta</h1>
+        <button id="language-toggle" class="language-toggle" onclick="toggleLanguage()">
+          <span class="lang-icon">🌐</span>
+          <span id="current-lang">EN</span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Hero Section -->
+  <section class="hero-section">
+    <div class="hero-container">
+      <!-- Left: Hero Content -->
+      <div class="hero-content">
+        <h1 class="hero-title">
+          Know if you're qualified before you apply
+        </h1>
+
+        <p class="hero-subtitle">
+          Compare your resume against any job posting in seconds. Get an instant match score and see exactly what skills
+          you're missing.
+        </p>
+
+        <div class="hero-cta">
+          <button id="get-started-btn" class="btn-primary">Try it now</button>
+          <p class="cta-note">No signup required</p>
+        </div>
+      </div>
+
+      <!-- Right: Stat Card -->
+      <div class="stat-visual">
+        <div class="stat-card">
+          <div class="stat-header">
+            <div class="stat-icon">⚠️</div>
+            <span class="stat-label">The Problem</span>
+          </div>
+          <div class="stat-number">98%</div>
+          <p class="stat-description">of applications go to jobs you're not qualified for</p>
+
+
+
+          <!-- Benefits Grid -->
+          <div class="benefits-grid">
+            <div class="benefit-item">
+              <div class="benefit-icon">⏱️</div>
+              <div class="benefit-text">
+                <strong>Save 10+ hours/week</strong>
+                <span>Stop wasting time</span>
+              </div>
+            </div>
+
+            <div class="benefit-item">
+              <div class="benefit-icon">📈</div>
+              <div class="benefit-text">
+                <strong>3x response rate</strong>
+                <span>Better results</span>
+              </div>
+            </div>
+
+            <div class="benefit-item">
+              <div class="benefit-icon">🎯</div>
+              <div class="benefit-text">
+                <strong>Higher confidence</strong>
+                <span>Ace interviews</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Main App Container -->
+  <div class="app-container" id="app-section">
+    <!-- Navigation -->
+    <nav class="nav-tabs">
+      <button class="nav-tab active" data-view="resume" data-i18n="navResume">Resume</button>
+      <button class="nav-tab" data-view="jobs" data-i18n="navJobs">Jobs</button>
+      <button class="nav-tab" data-view="comparison" data-i18n="navCompare">Compare</button>
+      <button class="nav-tab" data-view="dashboard" data-i18n="navDashboard">Dashboard</button>
+    </nav>
+
+    <!-- Resume View -->
+    <section id="resume-view" class="view-section active">
+      <div class="card">
+        <div class="card-header">
+          <h2 class="card-title" data-i18n="resumeTitle">Resume Management</h2>
+        </div>
+
+        <form id="resume-form">
+          <!-- PDF Upload Option -->
+          <div class="upload-section">
+            <h3>Quick Start: Upload Your Resume</h3>
+            <p class="form-hint">Upload a PDF resume to auto-extract text, or fill out the form manually below.</p>
+            <div class="form-group">
+              <label class="upload-label" for="resume-pdf">
+                <span class="upload-icon">📄</span>
+                <span class="upload-text">Click to upload PDF or drag and drop</span>
+                <input type="file" id="resume-pdf" accept=".pdf" style="display: none;">
+              </label>
+              <div id="pdf-status" class="pdf-status hidden"></div>
+            </div>
+          </div>
+
+          <div class="divider">
+            <span class="divider-text">OR</span>
+          </div>
+
+          <!-- Contact Information -->
+          <h3 data-i18n="contactInfo">Contact Information</h3>
+          <div class="form-group">
+            <label class="form-label" for="resume-first-name" data-i18n="firstName">First Name *</label>
+            <input type="text" id="resume-first-name" class="form-input" required>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="resume-last-name" data-i18n="lastName">Last Name *</label>
+            <input type="text" id="resume-last-name" class="form-input" required>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="resume-email" data-i18n="email">Email *</label>
+            <input type="email" id="resume-email" class="form-input" required>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="resume-zipcode" data-i18n="zipcode">Zipcode *</label>
+            <input type="text" id="resume-zipcode" class="form-input" placeholder="12345" pattern="[0-9]{5}"
+              maxlength="5" required>
+          </div>
+
+          <!-- Resume Version Title -->
+          <h3 class="mt-lg">Resume Version</h3>
+          <p class="form-hint">Give this resume version a name (e.g., "Software Engineer Resume", "Data Analyst Resume")
+          </p>
+          <div class="form-group">
+            <label class="form-label" for="resume-title">Resume Title</label>
+            <input type="text" id="resume-title" class="form-input" placeholder="My Resume" value="My Resume">
+          </div>
+
+          <!-- Professional Summary -->
+          <h3 class="mt-lg">Professional Summary</h3>
+          <div class="form-group">
+            <label class="form-label" for="resume-summary">Summary</label>
+            <textarea id="resume-summary" class="form-textarea"
+              placeholder="Brief overview of your professional background and goals"></textarea>
+          </div>
+
+          <!-- Skills -->
+          <h3 class="mt-lg">Skills</h3>
+          <div class="form-group">
+            <label class="form-label" for="resume-skills">Skills *</label>
+            <textarea id="resume-skills" class="form-textarea"
+              placeholder="Enter your skills, separated by commas (e.g., JavaScript, React, Node.js, Python, SQL)"
+              required></textarea>
+            <span class="form-hint">Separate skills with commas. Be specific!</span>
+          </div>
+
+          <!-- Experience -->
+          <h3 class="mt-lg">Work Experience</h3>
+          <div class="form-group">
+            <label class="form-label" for="resume-experience">Work Experience</label>
+            <textarea id="resume-experience" class="form-input" rows="8"
+              placeholder="List your work experience, job titles, companies, and key responsibilities..."></textarea>
+          </div>
+
+          <button type="submit" class="btn btn-primary" data-i18n="saveResume">Save Resume</button>
+        </form>
+      </div>
+
+      <!-- Saved Resumes List -->
+      <div class="card">
+        <div class="card-header">
+          <h2 class="card-title">Saved Resumes</h2>
+        </div>
+        <div id="resume-list" class="item-list">
+          <div class="empty-state">
+            <div class="empty-state-icon">📄</div>
+            <p>No resumes saved yet. Create your first resume above!</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Jobs View -->
+    <section id="jobs-view" class="view-section">
+      <div class="card">
+        <div class="card-header">
+          <h2 class="card-title" data-i18n="addJob">Add Job Posting</h2>
+        </div>
+
+        <form id="job-form">
+          <div class="form-group">
+            <label class="form-label" for="job-title" data-i18n="jobTitleLabel">Job Title *</label>
+            <input type="text" id="job-title" class="form-input" placeholder="e.g., Senior Software Engineer" required>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="job-company" data-i18n="company">Company *</label>
+            <input type="text" id="job-company" class="form-input" placeholder="e.g., Tech Corp Inc." required>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="job-location" data-i18n="location">Location</label>
+            <input type="text" id="job-location" class="form-input" placeholder="e.g., Remote, San Francisco, CA">
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="job-url">Job Posting URL</label>
+            <input type="url" id="job-url" class="form-input" placeholder="https://...">
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="job-description" data-i18n="jobDescription">Job Description</label>
+            <textarea id="job-description" class="form-textarea"
+              placeholder="Paste the full job description here"></textarea>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="job-requirements">Requirements & Qualifications *</label>
+            <textarea id="job-requirements" class="form-textarea"
+              placeholder="List the required skills, experience, and qualifications from the job posting"
+              required></textarea>
+            <span class="form-hint">Include all technical skills, years of experience, education requirements,
+              etc.</span>
+          </div>
+
+          <button type="submit" class="btn btn-primary" data-i18n="saveJob">Save Job Posting</button>
+        </form>
+      </div>
+
+      <!-- Saved Jobs List -->
+      <div class="card">
+        <div class="card-header">
+          <h2 class="card-title" data-i18n="jobTitle">Job Postings</h2>
+        </div>
+        <div id="jobs-list" class="item-list">
+          <div class="empty-state">
+            <div class="empty-state-icon">💼</div>
+            <p>No job postings saved yet. Add your first job above!</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Comparison View -->
+    <section id="comparison-view" class="view-section">
+      <div class="comparison-container">
+        <!-- Selection Panel -->
+        <div class="selection-panel">
+          <div class="card">
+            <div class="card-header">
+              <h3 class="card-title">Select Resume</h3>
+            </div>
+            <div id="resume-selector" class="item-list">
+              <div class="empty-state">
+                <p>No resumes available. Create a resume first!</p>
+              </div>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-header">
+              <h3 class="card-title">Select Job</h3>
+            </div>
+            <div id="job-selector" class="item-list">
+              <div class="empty-state">
+                <p>No jobs available. Add a job posting first!</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Analysis Results -->
+        <div id="analysis-results" class="hidden">
+          <!-- Match Score -->
+          <div class="match-score">
+            <div class="score-circle">
+              <span id="match-percentage">0%</span>
+            </div>
+            <p class="score-label">Match Score</p>
+            <p id="match-message" class="tagline"></p>
+          </div>
+
+          <!-- Skills Comparison -->
+          <div class="card">
+            <div class="card-header">
+              <h2 class="card-title">Skills Gap Analysis</h2>
+            </div>
+
+            <div class="skills-comparison">
+              <div class="skills-column">
+                <h3>✓ Your Matching Skills</h3>
+                <div id="matching-skills"></div>
+              </div>
+
+              <div class="skills-column">
+                <h3>⚠ Skills You're Missing</h3>
+                <div id="missing-skills"></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Detailed Comparison -->
+          <div class="card">
+            <div class="card-header">
+              <h2 class="card-title">Detailed Comparison</h2>
+            </div>
+            <div id="detailed-comparison"></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Dashboard View -->
+    <section id="dashboard-view" class="view-section">
+      <!-- Progress Card -->
+      <div class="card dashboard-hero">
+        <div class="progress-header">
+          <div class="user-level">
+            <div class="level-circle">
+              <span class="level-number" id="level-text">1</span>
+            </div>
+            <div class="level-info">
+              <h3 class="level-title">Level <span id="level-display">1</span></h3>
+              <p class="level-subtitle">Keep going to unlock more achievements!</p>
+            </div>
+          </div>
+          <div class="streak-display">
+            <div class="streak-icon">🔥</div>
+            <div class="streak-info">
+              <span class="streak-number" id="streak-days">0</span>
+              <span class="streak-label">Day Streak</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="xp-progress">
+          <div class="xp-progress-header">
+            <span class="xp-label">Experience Points</span>
+            <span class="xp-text" id="xp-text">0 / 500 XP</span>
+          </div>
+          <div class="xp-bar-container">
+            <div class="xp-bar" id="xp-bar" style="width: 0%"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Stats Cards -->
+      <div class="stats-grid">
+        <div class="stat-card">
+          <div class="stat-header">
+            <span class="stat-icon">📊</span>
+            <span class="stat-trend">↑</span>
+          </div>
+          <div class="stat-value" id="stat-comparisons">0</div>
+          <div class="stat-label">Job Comparisons</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-header">
+            <span class="stat-icon">💼</span>
+            <span class="stat-trend">↑</span>
+          </div>
+          <div class="stat-value" id="stat-jobs">0</div>
+          <div class="stat-label">Jobs Analyzed</div>
+        </div>
+        <div class="stat-card stat-highlight">
+          <div class="stat-header">
+            <span class="stat-icon">🎯</span>
+            <span class="stat-trend">—</span>
+          </div>
+          <div class="stat-value" id="stat-avg-match">0%</div>
+          <div class="stat-label">Average Match</div>
+        </div>
+        <div class="stat-card stat-highlight">
+          <div class="stat-header">
+            <span class="stat-icon">🏆</span>
+            <span class="stat-trend">↑</span>
+          </div>
+          <div class="stat-value" id="stat-best-match">0%</div>
+          <div class="stat-label">Best Match</div>
+        </div>
+      </div>
+
+      <!-- Your Best Skills -->
+      <div class="card">
+        <div class="card-header">
+          <h2 class="card-title">⭐ Your Best Skills</h2>
+          <p class="card-subtitle">Skills you have that match job requirements most often</p>
+        </div>
+        <div id="best-skills-container" class="best-skills-grid"></div>
+      </div>
+
+      <!-- Skills Insights -->
+      <div class="skills-insights-grid">
+        <div class="card">
+          <div class="card-header">
+            <h2 class="card-title">🔥 Most In-Demand</h2>
+            <p class="card-subtitle">Top skills across all jobs</p>
+          </div>
+          <div id="top-skills-list" class="skills-rank-list"></div>
+        </div>
+
+        <div class="card">
+          <div class="card-header">
+            <h2 class="card-title">📚 Skills to Learn</h2>
+            <p class="card-subtitle">Most common gaps</p>
+          </div>
+          <div id="missing-skills-list" class="skills-rank-list"></div>
+        </div>
+      </div>
+
+      <!-- Achievements -->
+      <div class="card">
+        <div class="card-header">
+          <h2 class="card-title">🏆 Achievements</h2>
+          <p class="card-subtitle">Unlock badges by reaching milestones</p>
+        </div>
+        <div id="achievements-container" class="achievements-grid"></div>
+      </div>
+
+      <!-- Recent Activity -->
+      <div class="card">
+        <div class="card-header">
+          <h2 class="card-title">📈 Recent Activity</h2>
+        </div>
+        <div id="recent-activity" class="activity-feed"></div>
+      </div>
+    </section>
+  </div>
+
+  <!-- Footer -->
+  <footer class="footer">
+    <div class="container">
+      <div class="footer-content">
+        <p class="footer-text">© 2024 Recluta - Application Readiness Platform</p>
+        <button id="reset-data-btn" class="footer-reset-btn" title="Clear all data">
+          Reset All Data
+        </button>
+      </div>
+    </div>
+  </footer>
+
+  <!-- Scripts -->
+  <script src="translations.js"></script>
+  <script src="translation-helper.js"></script>
+  <script src="app.js"></script>
+  <script src="gamification.js"></script>
+  <script src="analytics.js"></script>
+  <script src="resume-manager.js"></script>
+  <script src="job-manager.js"></script>
+  <script src="comparison-engine.js"></script>
+  <script src="dashboard-manager.js"></script>
+</body>
+
+</html>
