@@ -9,11 +9,365 @@ class DashboardManager {
 
     loadDashboard() {
         this.updateProgressDisplay();
+        this.renderJourneyRoadmap();
         this.updateStatsCards();
         this.renderBestSkills();
         this.renderSkillsInsights();
         this.renderAchievements();
         this.renderRecentActivity();
+    }
+
+    defineJourneyStages() {
+        return [
+            {
+                id: 'getting_started',
+                name: 'Getting Started',
+                icon: '🎯',
+                color: '#FF6B6B',
+                description: 'Build your resume and understand your skills',
+                requirements: {
+                    resumes: 1,
+                    totalSkills: 5
+                },
+                tips: [
+                    'Create your first resume with accurate skills',
+                    'List at least 5 professional skills',
+                    'Include your work experience'
+                ]
+            },
+            {
+                id: 'job_discovery',
+                name: 'Job Discovery',
+                icon: '🔍',
+                color: '#4ECDC4',
+                description: 'Find and save job postings that interest you',
+                requirements: {
+                    jobs: 3
+                },
+                tips: [
+                    'Add at least 3 job postings',
+                    'Include detailed job requirements',
+                    'Copy full job descriptions for better analysis'
+                ]
+            },
+            {
+                id: 'skills_analysis',
+                name: 'Skills Analysis',
+                icon: '📊',
+                color: '#95E1D3',
+                description: 'Compare your resume to jobs and identify gaps',
+                requirements: {
+                    comparisons: 5
+                },
+                tips: [
+                    'Compare your resume with different jobs',
+                    'Complete at least 5 comparisons',
+                    'Review matching and missing skills carefully'
+                ]
+            },
+            {
+                id: 'skill_building',
+                name: 'Skill Building',
+                icon: '📈',
+                color: '#F38181',
+                description: 'Improve your skills and increase match scores',
+                requirements: {
+                    comparisons: 10,
+                    averageMatch: 50
+                },
+                tips: [
+                    'Update your resume with new skills',
+                    'Focus on high-demand skills',
+                    'Aim for 50%+ average match score'
+                ]
+            },
+            {
+                id: 'application_ready',
+                name: 'Application Ready',
+                icon: '✅',
+                color: '#AA96DA',
+                description: 'Achieve strong match scores, ready to apply',
+                requirements: {
+                    comparisons: 15,
+                    averageMatch: 70,
+                    bestMatch: 80
+                },
+                tips: [
+                    'Target 70%+ average match score',
+                    'Achieve at least one 80%+ match',
+                    'Tailor your resume for best matches'
+                ]
+            },
+            {
+                id: 'job_hunt_success',
+                name: 'Job Hunt Success',
+                icon: '🏆',
+                color: '#FCBAD3',
+                description: 'Master your job search process',
+                requirements: {
+                    comparisons: 25,
+                    averageMatch: 75,
+                    bestMatch: 90
+                },
+                tips: [
+                    'Maintain 75%+ average match score',
+                    'Achieve 90%+ perfect matches',
+                    'Keep comparing and improving'
+                ]
+            }
+        ];
+    }
+
+    getCurrentStageIndex() {
+        const stages = this.defineJourneyStages();
+        const stats = analytics.getStats();
+        const jobs = jobManager.getAllJobs();
+        const resumes = resumeManager ? resumeManager.getAllResumes() : [];
+
+        // Count total skills across all resumes
+        let totalSkills = 0;
+        resumes.forEach(resume => {
+            const skills = Utils.extractSkills(resume.skills);
+            totalSkills += skills.length;
+        });
+
+        const userProgress = {
+            resumes: resumes.length,
+            jobs: jobs.length,
+            comparisons: stats.totalComparisons,
+            averageMatch: stats.averageMatch,
+            bestMatch: stats.bestMatch,
+            totalSkills: totalSkills
+        };
+
+        // Find the highest stage the user has completed
+        let currentStageIndex = 0;
+
+        for (let i = 0; i < stages.length; i++) {
+            const stage = stages[i];
+            const isComplete = this.isStageComplete(stage, userProgress);
+
+            if (isComplete && i < stages.length - 1) {
+                currentStageIndex = i + 1;
+            } else if (!isComplete) {
+                break;
+            }
+        }
+
+        return currentStageIndex;
+    }
+
+    isStageComplete(stage, userProgress) {
+        const req = stage.requirements;
+
+        if (req.resumes && userProgress.resumes < req.resumes) return false;
+        if (req.jobs && userProgress.jobs < req.jobs) return false;
+        if (req.comparisons && userProgress.comparisons < req.comparisons) return false;
+        if (req.averageMatch && userProgress.averageMatch < req.averageMatch) return false;
+        if (req.bestMatch && userProgress.bestMatch < req.bestMatch) return false;
+        if (req.totalSkills && userProgress.totalSkills < req.totalSkills) return false;
+
+        return true;
+    }
+
+    getStageProgress(stage, userProgress) {
+        const req = stage.requirements;
+        let totalChecks = 0;
+        let completedChecks = 0;
+
+        if (req.resumes !== undefined) {
+            totalChecks++;
+            if (userProgress.resumes >= req.resumes) completedChecks++;
+        }
+        if (req.jobs !== undefined) {
+            totalChecks++;
+            if (userProgress.jobs >= req.jobs) completedChecks++;
+        }
+        if (req.comparisons !== undefined) {
+            totalChecks++;
+            if (userProgress.comparisons >= req.comparisons) completedChecks++;
+        }
+        if (req.averageMatch !== undefined) {
+            totalChecks++;
+            if (userProgress.averageMatch >= req.averageMatch) completedChecks++;
+        }
+        if (req.bestMatch !== undefined) {
+            totalChecks++;
+            if (userProgress.bestMatch >= req.bestMatch) completedChecks++;
+        }
+        if (req.totalSkills !== undefined) {
+            totalChecks++;
+            if (userProgress.totalSkills >= req.totalSkills) completedChecks++;
+        }
+
+        return totalChecks > 0 ? (completedChecks / totalChecks) * 100 : 0;
+    }
+
+    renderJourneyRoadmap() {
+        const stages = this.defineJourneyStages();
+        const currentStageIndex = this.getCurrentStageIndex();
+        const stats = analytics.getStats();
+        const jobs = jobManager.getAllJobs();
+        const resumes = resumeManager ? resumeManager.getAllResumes() : [];
+
+        let totalSkills = 0;
+        resumes.forEach(resume => {
+            const skills = Utils.extractSkills(resume.skills);
+            totalSkills += skills.length;
+        });
+
+        const userProgress = {
+            resumes: resumes.length,
+            jobs: jobs.length,
+            comparisons: stats.totalComparisons,
+            averageMatch: stats.averageMatch,
+            bestMatch: stats.bestMatch,
+            totalSkills: totalSkills
+        };
+
+        // Render roadmap
+        const roadmapContainer = document.getElementById('journey-roadmap');
+        roadmapContainer.innerHTML = `
+            <div class="roadmap-path">
+                ${stages.map((stage, index) => {
+                    const isComplete = index < currentStageIndex;
+                    const isCurrent = index === currentStageIndex;
+                    const progress = this.getStageProgress(stage, userProgress);
+
+                    return `
+                        <div class="roadmap-stage ${isComplete ? 'completed' : ''} ${isCurrent ? 'current' : ''} ${index > currentStageIndex ? 'locked' : ''}">
+                            <div class="stage-connector ${isComplete ? 'completed' : ''}"></div>
+                            <div class="stage-milestone" style="--stage-color: ${stage.color}">
+                                <div class="stage-icon">${stage.icon}</div>
+                                ${isCurrent && progress > 0 && progress < 100 ? `
+                                    <svg class="stage-progress-ring" width="80" height="80">
+                                        <circle cx="40" cy="40" r="36" stroke="#e0e0e0" stroke-width="4" fill="none"></circle>
+                                        <circle cx="40" cy="40" r="36" stroke="${stage.color}" stroke-width="4" fill="none"
+                                            stroke-dasharray="226.19" stroke-dashoffset="${226.19 - (226.19 * progress / 100)}"
+                                            transform="rotate(-90 40 40)"></circle>
+                                    </svg>
+                                ` : ''}
+                                ${isComplete ? '<div class="stage-checkmark">✓</div>' : ''}
+                            </div>
+                            <div class="stage-info">
+                                <h3 class="stage-name">${stage.name}</h3>
+                                <p class="stage-description">${stage.description}</p>
+                            </div>
+                        </div>
+                    `;
+                }).join('')}
+            </div>
+        `;
+
+        // Render current stage details
+        this.renderCurrentStageDetails(stages[currentStageIndex], userProgress);
+    }
+
+    renderCurrentStageDetails(stage, userProgress) {
+        const container = document.getElementById('current-stage-details');
+        const progress = this.getStageProgress(stage, userProgress);
+        const isComplete = progress === 100;
+
+        let requirementsList = '';
+        const req = stage.requirements;
+
+        if (req.resumes !== undefined) {
+            const done = userProgress.resumes >= req.resumes;
+            requirementsList += `
+                <div class="requirement-item ${done ? 'completed' : ''}">
+                    <span class="requirement-icon">${done ? '✓' : '○'}</span>
+                    <span class="requirement-text">Create ${req.resumes} resume${req.resumes > 1 ? 's' : ''}</span>
+                    <span class="requirement-progress">${userProgress.resumes}/${req.resumes}</span>
+                </div>
+            `;
+        }
+        if (req.jobs !== undefined) {
+            const done = userProgress.jobs >= req.jobs;
+            requirementsList += `
+                <div class="requirement-item ${done ? 'completed' : ''}">
+                    <span class="requirement-icon">${done ? '✓' : '○'}</span>
+                    <span class="requirement-text">Add ${req.jobs} job posting${req.jobs > 1 ? 's' : ''}</span>
+                    <span class="requirement-progress">${userProgress.jobs}/${req.jobs}</span>
+                </div>
+            `;
+        }
+        if (req.comparisons !== undefined) {
+            const done = userProgress.comparisons >= req.comparisons;
+            requirementsList += `
+                <div class="requirement-item ${done ? 'completed' : ''}">
+                    <span class="requirement-icon">${done ? '✓' : '○'}</span>
+                    <span class="requirement-text">Complete ${req.comparisons} comparison${req.comparisons > 1 ? 's' : ''}</span>
+                    <span class="requirement-progress">${userProgress.comparisons}/${req.comparisons}</span>
+                </div>
+            `;
+        }
+        if (req.averageMatch !== undefined) {
+            const done = userProgress.averageMatch >= req.averageMatch;
+            requirementsList += `
+                <div class="requirement-item ${done ? 'completed' : ''}">
+                    <span class="requirement-icon">${done ? '✓' : '○'}</span>
+                    <span class="requirement-text">Achieve ${req.averageMatch}% average match</span>
+                    <span class="requirement-progress">${userProgress.averageMatch}%/${req.averageMatch}%</span>
+                </div>
+            `;
+        }
+        if (req.bestMatch !== undefined) {
+            const done = userProgress.bestMatch >= req.bestMatch;
+            requirementsList += `
+                <div class="requirement-item ${done ? 'completed' : ''}">
+                    <span class="requirement-icon">${done ? '✓' : '○'}</span>
+                    <span class="requirement-text">Achieve ${req.bestMatch}% best match</span>
+                    <span class="requirement-progress">${userProgress.bestMatch}%/${req.bestMatch}%</span>
+                </div>
+            `;
+        }
+        if (req.totalSkills !== undefined) {
+            const done = userProgress.totalSkills >= req.totalSkills;
+            requirementsList += `
+                <div class="requirement-item ${done ? 'completed' : ''}">
+                    <span class="requirement-icon">${done ? '✓' : '○'}</span>
+                    <span class="requirement-text">List ${req.totalSkills}+ skills</span>
+                    <span class="requirement-progress">${userProgress.totalSkills}/${req.totalSkills}</span>
+                </div>
+            `;
+        }
+
+        container.innerHTML = `
+            <div class="current-stage-card">
+                <div class="current-stage-header">
+                    <div class="current-stage-icon" style="background: ${stage.color}">${stage.icon}</div>
+                    <div class="current-stage-title-section">
+                        <h3 class="current-stage-title">${isComplete ? '✓ Completed: ' : 'Current Stage: '}${stage.name}</h3>
+                        <p class="current-stage-subtitle">${stage.description}</p>
+                    </div>
+                    <div class="current-stage-progress-circle">
+                        <svg width="60" height="60">
+                            <circle cx="30" cy="30" r="26" stroke="#e0e0e0" stroke-width="4" fill="none"></circle>
+                            <circle cx="30" cy="30" r="26" stroke="${stage.color}" stroke-width="4" fill="none"
+                                stroke-dasharray="163.36" stroke-dashoffset="${163.36 - (163.36 * progress / 100)}"
+                                transform="rotate(-90 30 30)"></circle>
+                        </svg>
+                        <span class="progress-percentage">${Math.round(progress)}%</span>
+                    </div>
+                </div>
+
+                <div class="current-stage-body">
+                    <div class="requirements-section">
+                        <h4 class="section-title">Requirements</h4>
+                        <div class="requirements-list">
+                            ${requirementsList}
+                        </div>
+                    </div>
+
+                    <div class="tips-section">
+                        <h4 class="section-title">Tips to Progress</h4>
+                        <ul class="tips-list">
+                            ${stage.tips.map(tip => `<li>${tip}</li>`).join('')}
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        `;
     }
 
     updateProgressDisplay() {
