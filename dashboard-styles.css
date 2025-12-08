@@ -4,11 +4,25 @@
 
 /* Dashboard Hero Card */
 .dashboard-hero {
-    background: var(--primary-color);
+    background: var(--gradient-startup);
     color: white;
     padding: var(--spacing-2xl);
     margin-bottom: var(--spacing-xl);
-    border: 1px solid var(--primary-light-color);
+    border: 1px solid var(--startup-blue-light);
+    box-shadow: 0 8px 32px rgba(44, 61, 85, 0.3);
+    position: relative;
+    overflow: hidden;
+}
+
+.dashboard-hero::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    right: -50%;
+    width: 200%;
+    height: 200%;
+    background: radial-gradient(circle, rgba(255, 255, 255, 0.1) 0%, transparent 70%);
+    pointer-events: none;
 }
 
 .progress-header {
@@ -118,10 +132,10 @@
 
 .xp-bar {
     height: 100%;
-    background: var(--success-color);
+    background: linear-gradient(90deg, var(--startup-blue-light) 0%, var(--success-color) 100%);
     border-radius: 10px;
     transition: width 0.6s cubic-bezier(0.4, 0, 0.2, 1);
-    box-shadow: none;
+    box-shadow: 0 2px 8px rgba(83, 98, 113, 0.3);
 }
 
 /* Stats Grid */
@@ -141,15 +155,17 @@
 }
 
 .stat-card:hover {
-    transform: translateY(-2px);
-    box-shadow: var(--shadow-lg);
-    border-color: var(--primary-color);
+    transform: translateY(-4px);
+    box-shadow: 0 8px 30px rgba(83, 98, 113, 0.3);
+    border-color: var(--startup-blue-light);
 }
 
 .stat-card.stat-highlight {
-    background: var(--bg-tertiary);
-    border-color: var(--secondary-color);
-    border-left: 3px solid var(--secondary-color);
+    background: linear-gradient(135deg, var(--bg-tertiary) 0%, var(--bg-elevated) 100%);
+    border-color: var(--startup-blue-light);
+    border-left: 4px solid;
+    border-image: var(--gradient-startup) 1;
+    box-shadow: 0 4px 20px rgba(44, 61, 85, 0.2);
 }
 
 .stat-header {
@@ -203,9 +219,10 @@
 }
 
 .best-skill-card:hover {
-    transform: translateX(4px);
-    border-color: var(--primary-color);
-    box-shadow: var(--shadow-md);
+    transform: translateX(6px);
+    border-color: var(--startup-blue-light);
+    box-shadow: 0 4px 20px rgba(83, 98, 113, 0.2);
+    background: linear-gradient(135deg, var(--bg-elevated) 0%, var(--bg-tertiary) 100%);
 }
 
 .best-skill-rank {
@@ -320,9 +337,11 @@
 }
 
 .achievement-badge.unlocked {
-    border-color: var(--success-color);
-    background: var(--bg-tertiary);
-    border-left: 3px solid var(--success-color);
+    border-color: var(--startup-blue-light);
+    background: linear-gradient(135deg, var(--bg-tertiary) 0%, var(--bg-elevated) 100%);
+    border-left: 4px solid;
+    border-image: var(--gradient-startup) 1;
+    box-shadow: 0 4px 20px rgba(44, 61, 85, 0.2);
 }
 
 .achievement-badge.locked {
@@ -378,13 +397,15 @@
     padding: var(--spacing-md);
     background: var(--bg-tertiary);
     border-radius: var(--radius-sm);
-    border-left: 3px solid var(--primary-color);
+    border-left: 4px solid;
+    border-image: var(--gradient-startup) 1;
     transition: all var(--transition-base);
 }
 
 .activity-item:hover {
-    background: var(--bg-elevated);
-    transform: translateX(4px);
+    background: linear-gradient(135deg, var(--bg-elevated) 0%, var(--bg-tertiary) 100%);
+    transform: translateX(6px);
+    box-shadow: 0 4px 15px rgba(83, 98, 113, 0.2);
 }
 
 .activity-icon {
