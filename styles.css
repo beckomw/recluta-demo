@@ -5,40 +5,43 @@
 
 /* === CSS Variables & Design Tokens === */
 :root {
-  /* Color Palette */
-  --primary-hue: 260;
-  --primary-sat: 85%;
-  --primary-light: 55%;
+  /* Professional Goldman Sachs-Inspired Color Palette */
+  --primary-hue: 210;
+  --primary-sat: 100%;
+  --primary-light: 20%;
 
-  --primary-color: hsl(var(--primary-hue), var(--primary-sat), var(--primary-light));
-  --primary-dark: hsl(var(--primary-hue), var(--primary-sat), 45%);
-  --primary-light-color: hsl(var(--primary-hue), var(--primary-sat), 65%);
+  /* Primary - Deep Navy Blue */
+  --primary-color: hsl(210, 29%, 24%);
+  --primary-dark: hsl(210, 29%, 16%);
+  --primary-light-color: hsl(210, 29%, 32%);
 
-  --secondary-color: hsl(200, 80%, 50%);
-  --accent-color: hsl(320, 75%, 55%);
+  /* Secondary - Refined Gold/Bronze */
+  --secondary-color: hsl(43, 74%, 49%);
+  --accent-color: hsl(43, 74%, 42%);
 
-  --success-color: hsl(145, 65%, 50%);
-  --warning-color: hsl(40, 90%, 55%);
-  --danger-color: hsl(0, 75%, 55%);
+  /* Semantic Colors */
+  --success-color: hsl(152, 57%, 40%);
+  --warning-color: hsl(43, 89%, 38%);
+  --danger-color: hsl(0, 65%, 51%);
 
-  /* Neutrals */
-  --bg-primary: hsl(240, 15%, 8%);
-  --bg-secondary: hsl(240, 12%, 12%);
-  --bg-tertiary: hsl(240, 10%, 16%);
-  --bg-elevated: hsl(240, 12%, 18%);
+  /* Neutrals - Sophisticated Grays */
+  --bg-primary: hsl(210, 11%, 15%);
+  --bg-secondary: hsl(210, 11%, 18%);
+  --bg-tertiary: hsl(210, 11%, 21%);
+  --bg-elevated: hsl(210, 11%, 24%);
 
-  --text-primary: hsl(0, 0%, 95%);
-  --text-secondary: hsl(0, 0%, 70%);
-  --text-tertiary: hsl(0, 0%, 50%);
+  --text-primary: hsl(0, 0%, 98%);
+  --text-secondary: hsl(210, 6%, 75%);
+  --text-tertiary: hsl(210, 6%, 55%);
 
-  --border-color: hsl(240, 10%, 25%);
-  --border-hover: hsl(240, 10%, 35%);
+  --border-color: hsl(210, 11%, 28%);
+  --border-hover: hsl(210, 11%, 35%);
 
-  /* Gradients */
-  --gradient-primary: linear-gradient(135deg, var(--primary-color), var(--accent-color));
-  --gradient-secondary: linear-gradient(135deg, var(--secondary-color), var(--primary-color));
-  --gradient-success: linear-gradient(135deg, hsl(145, 65%, 50%), hsl(170, 70%, 45%));
-  --gradient-hero: linear-gradient(135deg, hsl(260, 85%, 25%), hsl(320, 75%, 25%), hsl(200, 80%, 25%));
+  /* Professional Gradients */
+  --gradient-primary: linear-gradient(135deg, hsl(210, 29%, 24%), hsl(210, 29%, 16%));
+  --gradient-secondary: linear-gradient(135deg, hsl(43, 74%, 49%), hsl(43, 74%, 35%));
+  --gradient-success: linear-gradient(135deg, hsl(152, 57%, 40%), hsl(152, 57%, 32%));
+  --gradient-hero: linear-gradient(135deg, hsl(210, 29%, 16%) 0%, hsl(210, 11%, 15%) 50%, hsl(210, 29%, 20%) 100%);
 
   /* Spacing */
   --spacing-xs: 0.5rem;
@@ -56,12 +59,12 @@
   --radius-xl: 2rem;
   --radius-full: 9999px;
 
-  /* Shadows */
-  --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.3);
-  --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.4);
-  --shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.5);
-  --shadow-glow: 0 0 20px rgba(var(--primary-hue), var(--primary-sat), var(--primary-light), 0.3);
-  --shadow-glow-lg: 0 0 40px rgba(var(--primary-hue), var(--primary-sat), var(--primary-light), 0.4);
+  /* Professional Shadows */
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.12), 0 1px 2px rgba(0, 0, 0, 0.24);
+  --shadow-md: 0 3px 6px rgba(0, 0, 0, 0.15), 0 2px 4px rgba(0, 0, 0, 0.12);
+  --shadow-lg: 0 10px 20px rgba(0, 0, 0, 0.19), 0 6px 6px rgba(0, 0, 0, 0.23);
+  --shadow-glow: 0 0 20px rgba(43, 74, 49, 0.15);
+  --shadow-glow-lg: 0 4px 24px rgba(43, 74, 49, 0.2);
 
   /* Transitions */
   --transition-fast: 150ms ease;
@@ -100,10 +103,9 @@ h6 {
 
 h1 {
   font-size: 2.5rem;
-  background: var(--gradient-primary);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
+  color: var(--text-primary);
+  font-weight: 600;
+  letter-spacing: -0.02em;
 }
 
 h2 {
@@ -149,11 +151,8 @@ p {
   margin: 0;
   font-size: 1.5rem;
   font-weight: 700;
-  background: var(--gradient-primary);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-  letter-spacing: -0.02em;
+  color: var(--text-primary);
+  letter-spacing: -0.01em;
 }
 
 .language-toggle {
@@ -499,14 +498,16 @@ p {
 }
 
 .btn-primary {
-  background: var(--gradient-primary);
+  background: var(--primary-color);
   color: white;
   box-shadow: var(--shadow-sm);
+  border: 1px solid transparent;
 }
 
 .btn-primary:hover:not(:disabled) {
-  transform: translateY(-2px);
-  box-shadow: var(--shadow-md), var(--shadow-glow);
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-md);
+  background: var(--primary-light-color);
 }
 
 .btn-secondary {
@@ -844,7 +845,7 @@ html {
   scroll-behavior: smooth;
 }
 
-/* Animated Background */
+/* Professional Background */
 .animated-bg {
   position: fixed;
   top: 0;
@@ -856,39 +857,49 @@ html {
   background: var(--bg-primary);
 }
 
+.animated-bg::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: linear-gradient(90deg,
+    transparent 0%,
+    var(--border-color) 20%,
+    var(--border-color) 80%,
+    transparent 100%
+  );
+}
+
 .blob {
   position: absolute;
   border-radius: 50%;
-  filter: blur(80px);
-  opacity: 0.3;
-  animation: blob-move 20s ease-in-out infinite;
+  filter: blur(120px);
+  opacity: 0.08;
+  animation: blob-move 30s ease-in-out infinite;
 }
 
 .blob-1 {
-  width: 500px;
-  height: 500px;
-  background: var(--primary-color);
-  top: -10%;
-  left: -10%;
+  width: 600px;
+  height: 600px;
+  background: var(--secondary-color);
+  top: -20%;
+  right: 10%;
   animation-delay: 0s;
 }
 
 .blob-2 {
-  width: 400px;
-  height: 400px;
-  background: var(--accent-color);
-  top: 50%;
-  right: -5%;
-  animation-delay: -7s;
+  width: 500px;
+  height: 500px;
+  background: var(--primary-color);
+  bottom: -10%;
+  left: 10%;
+  animation-delay: -15s;
 }
 
 .blob-3 {
-  width: 450px;
-  height: 450px;
-  background: var(--secondary-color);
-  bottom: -10%;
-  left: 50%;
-  animation-delay: -14s;
+  display: none;
 }
 
 /* Hero Section */
@@ -941,22 +952,24 @@ html {
   gap: var(--spacing-sm);
 }
 
-.btn-primary {
+.hero-section .btn-primary {
   padding: 1rem 2.5rem;
   font-size: 1rem;
   font-weight: 600;
-  background: var(--gradient-primary);
+  background: var(--primary-color);
   color: white;
-  border: none;
-  border-radius: var(--radius-md);
+  border: 1px solid var(--primary-color);
+  border-radius: 0.25rem;
   cursor: pointer;
   transition: all 0.2s ease;
-  box-shadow: 0 4px 12px rgba(139, 92, 246, 0.3);
+  box-shadow: var(--shadow-sm);
 }
 
-.btn-primary:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 6px 20px rgba(139, 92, 246, 0.4);
+.hero-section .btn-primary:hover {
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-md);
+  background: var(--primary-light-color);
+  border-color: var(--primary-light-color);
 }
 
 .cta-note {
@@ -1001,10 +1014,7 @@ html {
   font-size: 5rem;
   font-weight: 700;
   line-height: 1;
-  background: linear-gradient(135deg, #ef4444, #dc2626);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
+  color: var(--danger-color);
   margin-bottom: var(--spacing-sm);
 }
 
@@ -1108,10 +1118,7 @@ html {
 .stat-value {
   font-size: 2rem;
   font-weight: 700;
-  background: var(--gradient-primary);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
+  color: var(--text-primary);
   line-height: 1;
   margin-bottom: var(--spacing-xs);
 }
@@ -1181,14 +1188,14 @@ html {
   width: 50px;
   height: 50px;
   border-radius: 50%;
-  background: var(--gradient-primary);
+  background: var(--primary-color);
   color: white;
   font-size: 1.5rem;
   font-weight: 700;
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: var(--shadow-glow);
+  box-shadow: var(--shadow-sm);
 }
 
 .hero-step-text {
@@ -1221,39 +1228,23 @@ html {
 .btn-hero {
   padding: var(--spacing-md) var(--spacing-2xl);
   font-size: 1.1rem;
-  background: var(--gradient-primary);
+  background: var(--primary-color);
   color: white;
-  border: none;
-  border-radius: var(--radius-full);
-  font-weight: 700;
+  border: 1px solid var(--primary-color);
+  border-radius: 0.25rem;
+  font-weight: 600;
   cursor: pointer;
   transition: all var(--transition-base);
-  box-shadow: var(--shadow-lg);
+  box-shadow: var(--shadow-sm);
   position: relative;
   overflow: hidden;
 }
 
-.btn-hero::before {
-  content: '';
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  width: 0;
-  height: 0;
-  border-radius: 50%;
-  background: rgba(255, 255, 255, 0.3);
-  transform: translate(-50%, -50%);
-  transition: width 0.6s, height 0.6s;
-}
-
-.btn-hero:hover::before {
-  width: 300px;
-  height: 300px;
-}
-
 .btn-hero:hover {
-  transform: translateY(-4px) scale(1.05);
-  box-shadow: var(--shadow-lg), var(--shadow-glow-lg);
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-md);
+  background: var(--primary-light-color);
+  border-color: var(--primary-light-color);
 }
 
 .btn-hero-secondary {
@@ -1285,13 +1276,10 @@ html {
   text-align: center;
 }
 
-.stat-number {
+.hero-stats .stat-number {
   font-size: clamp(2rem, 4vw, 3rem);
   font-weight: 800;
-  background: var(--gradient-primary);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
+  color: var(--secondary-color);
   margin-bottom: var(--spacing-xs);
 }
 
@@ -1314,10 +1302,9 @@ html {
   font-size: clamp(2rem, 4vw, 3rem);
   text-align: center;
   margin-bottom: var(--spacing-md);
-  background: linear-gradient(135deg, var(--text-primary), var(--primary-light-color));
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
+  color: var(--text-primary);
+  font-weight: 600;
+  letter-spacing: -0.02em;
 }
 
 .section-subtitle {
@@ -1385,8 +1372,8 @@ html {
   top: 0;
   left: 0;
   right: 0;
-  height: 4px;
-  background: var(--gradient-primary);
+  height: 2px;
+  background: var(--secondary-color);
 }
 
 .feature-card-large .feature-icon {
@@ -1468,7 +1455,7 @@ html {
 }
 
 .indicator.active {
-  background: var(--gradient-primary);
+  background: var(--primary-color);
   width: 40px;
   border-radius: var(--radius-full);
 }
@@ -1507,10 +1494,10 @@ html {
   position: absolute;
   top: var(--spacing-md);
   right: var(--spacing-md);
-  background: var(--gradient-primary);
-  color: white;
+  background: var(--secondary-color);
+  color: var(--bg-primary);
   padding: var(--spacing-xs) var(--spacing-md);
-  border-radius: var(--radius-full);
+  border-radius: 0.25rem;
   font-size: 0.75rem;
   font-weight: 700;
   text-transform: uppercase;
@@ -1639,7 +1626,7 @@ html {
   width: 60px;
   height: 60px;
   border-radius: 50%;
-  background: var(--gradient-primary);
+  background: var(--primary-color);
   color: white;
   font-size: 2rem;
   font-weight: 800;
@@ -1647,7 +1634,7 @@ html {
   align-items: center;
   justify-content: center;
   margin: 0 auto var(--spacing-md);
-  box-shadow: var(--shadow-glow);
+  box-shadow: var(--shadow-sm);
 }
 
 .step-title {
