@@ -72,6 +72,14 @@ class ResumeManager {
                 return;
             }
 
+            // Add file size limit (5MB) to prevent browser crashes
+            const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB in bytes
+            if (file.size > MAX_FILE_SIZE) {
+                this.showPDFStatus('PDF file too large. Maximum size is 5MB.', 'error');
+                pdfInput.value = ''; // Clear the input
+                return;
+            }
+
             this.showPDFStatus('Processing PDF...', 'processing');
 
             try {
@@ -134,16 +142,24 @@ class ResumeManager {
         // Try to find name - usually first substantial line, but must be short
         if (lines.length > 0) {
             const firstLine = lines[0].trim();
-            // Name should be short (under 50 chars), 2-3 words, capitalized
-            if (firstLine.length < 50 && /^[A-Z][a-z]+\s+[A-Z][a-z]+(\s+[A-Z][a-z]+)?$/.test(firstLine)) {
-                const nameParts = firstLine.split(/\s+/);
-                if (nameParts.length === 2) {
-                    document.getElementById('resume-first-name').value = nameParts[0];
-                    document.getElementById('resume-last-name').value = nameParts[1];
-                } else if (nameParts.length === 3) {
-                    // Handle middle name/initial
-                    document.getElementById('resume-first-name').value = nameParts[0];
-                    document.getElementById('resume-last-name').value = nameParts.slice(1).join(' ');
+            // Improved name pattern that handles:
+            // - Apostrophes: O'Brien
+            // - Hyphens: Mary-Jane
+            // - Internal capitals: McDonald
+            // - Prefixes: van der Berg, de la Cruz
+            // - Titles: Dr., PhD (filtered out)
+            const namePattern = /^(?:Dr\.?|Mr\.?|Mrs\.?|Ms\.?|Prof\.?)?\s*([A-Z][a-zA-Z'\-]+(?:\s+(?:van|von|de|del|della|da|le|la|di|dos|das|der|den)\s+)?(?:\s+[A-Z][a-zA-Z'\-\.]+)+)\s*(?:PhD|Ph\.D\.|Jr\.?|Sr\.?|I{1,3}|IV|V)?$/;
+
+            if (firstLine.length < 100 && namePattern.test(firstLine)) {
+                const match = firstLine.match(namePattern);
+                if (match && match[1]) {
+                    const cleanName = match[1].trim();
+                    const nameParts = cleanName.split(/\s+/);
+
+                    if (nameParts.length >= 2) {
+                        document.getElementById('resume-first-name').value = nameParts[0];
+                        document.getElementById('resume-last-name').value = nameParts.slice(1).join(' ');
+                    }
                 }
             }
         }
@@ -160,10 +176,12 @@ class ResumeManager {
             document.getElementById('resume-phone').value = phoneMatch[0];
         }
 
-        // Extract zipcode
-        const zipcodeMatch = text.match(/\b\d{5}\b/);
+        // Extract zipcode (supports both 12345 and 12345-6789 formats)
+        const zipcodeMatch = text.match(/\b\d{5}(-\d{4})?\b/);
         if (zipcodeMatch) {
-            document.getElementById('resume-zipcode').value = zipcodeMatch[0];
+            // Extract just the 5-digit portion for the form field
+            const zipcode = zipcodeMatch[0].split('-')[0];
+            document.getElementById('resume-zipcode').value = zipcode;
         }
 
         // Extract skills - look for common patterns
