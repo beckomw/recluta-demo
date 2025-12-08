@@ -1,129 +1,7 @@
-// ===================================
-// Application Core
-// Navigation & State Management
-// ===================================
-
-class App {
-    constructor() {
-        this.currentView = 'resume';
-        this.init();
-    }
-
-    init() {
-        this.setupNavigation();
-        this.loadInitialData();
-    }
-
-    setupNavigation() {
-        const navTabs = document.querySelectorAll('.nav-tab');
-
-        navTabs.forEach(tab => {
-            tab.addEventListener('click', () => {
-                const view = tab.dataset.view;
-                this.switchView(view);
-            });
-        });
-    }
-
-    switchView(viewName) {
-        // Update active tab
-        document.querySelectorAll('.nav-tab').forEach(tab => {
-            tab.classList.remove('active');
-            if (tab.dataset.view === viewName) {
-                tab.classList.add('active');
-            }
-        });
-
-        // Update active view section
-        document.querySelectorAll('.view-section').forEach(section => {
-            section.classList.remove('active');
-        });
-
-        const targetView = document.getElementById(`${viewName}-view`);
-        if (targetView) {
-            targetView.classList.add('active');
-        }
-
-        this.currentView = viewName;
-
-        // Refresh data for the new view
-        if (viewName === 'comparison') {
-            comparisonEngine.loadSelectors();
-        } else if (viewName === 'dashboard') {
-            // Load dashboard data
-            if (typeof dashboardManager !== 'undefined') {
-                dashboardManager.loadDashboard();
-            }
-        }
-    }
-
-    loadInitialData() {
-        // Initialize managers
-        resumeManager.loadResumes();
-        jobManager.loadJobs();
-    }
-}
-
-// ===================================
-// Storage Helper
-// ===================================
-
-const Storage = {
-    get(key) {
-        try {
-            const data = localStorage.getItem(key);
-            return data ? JSON.parse(data) : null;
-        } catch (error) {
-            console.error('Error reading from storage:', error);
-            return null;
-        }
-    },
-
-    set(key, value) {
-        try {
-            localStorage.setItem(key, JSON.stringify(value));
-            return true;
-        } catch (error) {
-            console.error('Error writing to storage:', error);
-            return false;
-        }
-    },
-
-    remove(key) {
-        try {
-            localStorage.removeItem(key);
-            return true;
-        } catch (error) {
-            console.error('Error removing from storage:', error);
-            return false;
-        }
-    }
-};
-
-// ===================================
-// Utility Functions
-// ===================================
+// Test script for skills extraction with ambiguous terms
+// This tests the fix for false positives like "go" in "go to market"
 
 const Utils = {
-    generateId() {
-        return Date.now().toString(36) + Math.random().toString(36).substr(2);
-    },
-
-    formatDate(timestamp) {
-        const date = new Date(timestamp);
-        return date.toLocaleDateString('en-US', {
-            year: 'numeric',
-            month: 'short',
-            day: 'numeric'
-        });
-    },
-
-    escapeHtml(text) {
-        const div = document.createElement('div');
-        div.textContent = text;
-        return div.innerHTML;
-    },
-
     extractSkills(text) {
         if (!text) return [];
 
@@ -263,98 +141,118 @@ const Utils = {
             });
 
         return [...new Set(cleaned)]; // Remove duplicates
-    },
-
-    normalizeSkill(skill) {
-        return skill.toLowerCase().trim();
-    },
-
-    showNotification(message, type = 'success') {
-        // Simple notification (can be enhanced with a toast library)
-        console.log(`[${type.toUpperCase()}] ${message}`);
-
-        // You could add a toast notification here
-        // For now, we'll use a simple alert for important messages
-        if (type === 'error') {
-            alert(message);
-        }
     }
 };
 
-// ===================================
-// Accordion Toggle Function
-// ===================================
+// Test cases
+const testCases = [
+    {
+        name: 'Should NOT extract "go" from "go to market"',
+        input: 'We need to go to market quickly with this product',
+        shouldNotInclude: ['go'],
+        shouldInclude: []
+    },
+    {
+        name: 'Should extract "Go" from "Go programming"',
+        input: 'Experience with Go programming and backend development',
+        shouldInclude: ['Go'],
+        shouldNotInclude: []
+    },
+    {
+        name: 'Should extract "Go" from "knowledge of Go"',
+        input: 'Strong knowledge of Go and Python',
+        shouldInclude: ['Go', 'Python'],
+        shouldNotInclude: []
+    },
+    {
+        name: 'Should NOT extract "go" from "go for it"',
+        input: 'Let\'s go for it and implement this feature',
+        shouldNotInclude: ['go'],
+        shouldInclude: []
+    },
+    {
+        name: 'Should extract capitalized "Go" when standalone',
+        input: 'Go, Python, JavaScript, React',
+        shouldInclude: ['Go', 'Python', 'JavaScript', 'React'],
+        shouldNotInclude: []
+    },
+    {
+        name: 'Should NOT extract "swift" from "swift response"',
+        input: 'We need a swift response to this issue',
+        shouldNotInclude: ['Swift'],
+        shouldInclude: []
+    },
+    {
+        name: 'Should extract "Swift" from "Swift development"',
+        input: 'iOS Swift development experience required',
+        shouldInclude: ['Swift'],
+        shouldNotInclude: []
+    },
+    {
+        name: 'Should extract other languages normally',
+        input: 'Python, JavaScript, TypeScript, Java, and Ruby experience',
+        shouldInclude: ['Python', 'JavaScript', 'TypeScript', 'Java', 'Ruby'],
+        shouldNotInclude: []
+    },
+    {
+        name: 'Should NOT extract "rust" from "rust prevention"',
+        input: 'Metal rust prevention is important',
+        shouldNotInclude: ['Rust'],
+        shouldInclude: []
+    },
+    {
+        name: 'Should extract "Rust" from "Rust language"',
+        input: 'Rust language and Go language experience',
+        shouldInclude: ['Rust', 'Go'],
+        shouldNotInclude: []
+    }
+];
 
-function toggleAccordion(button) {
-    const item = button.parentElement;
-    const wasActive = item.classList.contains('active');
+// Run tests
+console.log('Running skills extraction tests...\n');
+let passed = 0;
+let failed = 0;
 
-    // Close all accordions
-    document.querySelectorAll('.accordion-item').forEach(acc => {
-        acc.classList.remove('active');
+testCases.forEach((testCase, index) => {
+    const skills = Utils.extractSkills(testCase.input);
+    const skillsLower = skills.map(s => s.toLowerCase());
+
+    let testPassed = true;
+    let errors = [];
+
+    // Check should include
+    testCase.shouldInclude.forEach(skill => {
+        if (!skills.some(s => s.toLowerCase() === skill.toLowerCase())) {
+            testPassed = false;
+            errors.push(`  ✗ Expected to find "${skill}" but it was not extracted`);
+        }
     });
 
-    // Open clicked accordion if it wasn't active
-    if (!wasActive) {
-        item.classList.add('active');
+    // Check should not include
+    testCase.shouldNotInclude.forEach(skill => {
+        if (skills.some(s => s.toLowerCase() === skill.toLowerCase())) {
+            testPassed = false;
+            errors.push(`  ✗ Should NOT have extracted "${skill}" but it was found`);
+        }
+    });
+
+    if (testPassed) {
+        console.log(`✓ Test ${index + 1}: ${testCase.name}`);
+        console.log(`  Input: "${testCase.input}"`);
+        console.log(`  Extracted: [${skills.join(', ')}]`);
+        passed++;
+    } else {
+        console.log(`✗ Test ${index + 1}: ${testCase.name}`);
+        console.log(`  Input: "${testCase.input}"`);
+        console.log(`  Extracted: [${skills.join(', ')}]`);
+        errors.forEach(err => console.log(err));
+        failed++;
     }
-}
-
-// ===================================
-// Initialize App
-// ===================================
-
-let app;
-
-document.addEventListener('DOMContentLoaded', () => {
-    app = new App();
-
-    // Landing Page CTA Button
-    const getStartedBtn = document.getElementById('get-started-btn');
-    const appSection = document.getElementById('app-section');
-
-    // Scroll to app section
-    const scrollToApp = () => {
-        appSection?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    };
-
-    if (getStartedBtn) {
-        getStartedBtn.addEventListener('click', scrollToApp);
-    }
-
-    // Reset Data Button
-    const resetDataBtn = document.getElementById('reset-data-btn');
-    if (resetDataBtn) {
-        resetDataBtn.addEventListener('click', () => {
-            const confirmed = confirm(
-                '⚠️ WARNING: This will permanently delete ALL your data including:\n\n' +
-                '• Your profile information\n' +
-                '• All resumes\n' +
-                '• All job postings\n' +
-                '• Comparison history\n' +
-                '• Progress, XP, and achievements\n\n' +
-                'This action CANNOT be undone!\n\n' +
-                'Are you sure you want to continue?'
-            );
-
-            if (confirmed) {
-                // Double confirmation for safety
-                const doubleConfirm = confirm(
-                    'Last chance! Are you ABSOLUTELY sure?\n\n' +
-                    'Click OK to permanently delete everything.'
-                );
-
-                if (doubleConfirm) {
-                    // Clear all localStorage
-                    localStorage.clear();
-
-                    // Show success message
-                    alert('✅ All data has been cleared successfully!\n\nThe page will now reload.');
-
-                    // Reload page
-                    window.location.reload();
-                }
-            }
-        });
-    }
+    console.log('');
 });
+
+console.log(`\n${'='.repeat(50)}`);
+console.log(`Results: ${passed} passed, ${failed} failed out of ${testCases.length} tests`);
+console.log('='.repeat(50));
+
+process.exit(failed > 0 ? 1 : 0);
