@@ -349,36 +349,43 @@
 
     <!-- Dashboard View -->
     <section id="dashboard-view" class="view-section">
-      <!-- Progress Card -->
-      <div class="card dashboard-hero">
-        <div class="progress-header">
-          <div class="user-level">
-            <div class="level-circle">
-              <span class="level-number" id="level-text">1</span>
-            </div>
-            <div class="level-info">
-              <h3 class="level-title">Level <span id="level-display">1</span></h3>
-              <p class="level-subtitle">Keep going to unlock more achievements!</p>
-            </div>
+      <!-- Journey Roadmap -->
+      <div class="card roadmap-hero">
+        <div class="roadmap-header">
+          <div class="roadmap-title-section">
+            <h2 class="roadmap-title">Your Job Search Journey</h2>
+            <p class="roadmap-subtitle">Track your progress from preparation to success</p>
           </div>
-          <div class="streak-display">
-            <div class="streak-icon">▲</div>
-            <div class="streak-info">
-              <span class="streak-number" id="streak-days">0</span>
-              <span class="streak-label">Day Streak</span>
+          <div class="journey-stats">
+            <div class="journey-stat">
+              <div class="journey-stat-icon">⚡</div>
+              <div class="journey-stat-content">
+                <span class="journey-stat-value" id="level-display">1</span>
+                <span class="journey-stat-label">Level</span>
+              </div>
+            </div>
+            <div class="journey-stat">
+              <div class="journey-stat-icon">🔥</div>
+              <div class="journey-stat-content">
+                <span class="journey-stat-value" id="streak-days">0</span>
+                <span class="journey-stat-label">Day Streak</span>
+              </div>
+            </div>
+            <div class="journey-stat">
+              <div class="journey-stat-icon">✨</div>
+              <div class="journey-stat-content">
+                <span class="journey-stat-value" id="xp-text">0 / 500 XP</span>
+                <span class="journey-stat-label">Experience</span>
+              </div>
             </div>
           </div>
         </div>
 
-        <div class="xp-progress">
-          <div class="xp-progress-header">
-            <span class="xp-label">Experience Points</span>
-            <span class="xp-text" id="xp-text">0 / 500 XP</span>
-          </div>
-          <div class="xp-bar-container">
-            <div class="xp-bar" id="xp-bar" style="width: 0%"></div>
-          </div>
-        </div>
+        <!-- Journey Roadmap Path -->
+        <div id="journey-roadmap" class="journey-roadmap"></div>
+
+        <!-- Current Stage Details -->
+        <div id="current-stage-details" class="current-stage-details"></div>
       </div>
 
       <!-- Stats Cards -->
