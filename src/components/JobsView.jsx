@@ -10,6 +10,11 @@ import {
   Chip,
   Grid,
   Collapse,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogContentText,
+  DialogActions,
 } from '@mui/material';
 import { motion, AnimatePresence } from 'framer-motion';
 import DeleteIcon from '@mui/icons-material/Delete';
@@ -29,7 +34,7 @@ import HelpOutlineIcon from '@mui/icons-material/HelpOutline';
 import TrendingUpIcon from '@mui/icons-material/TrendingUp';
 import AutoAwesomeIcon from '@mui/icons-material/AutoAwesome';
 
-function JobsView() {
+function JobsView({ onNavigate }) {
   const [jobs, setJobs] = useState([]);
   const [resumes, setResumes] = useState([]);
   const [currentJob, setCurrentJob] = useState({
@@ -46,6 +51,7 @@ function JobsView() {
   const [errors, setErrors] = useState({});
   const [quickMatchJob, setQuickMatchJob] = useState(null);
   const [extractedSkills, setExtractedSkills] = useState([]);
+  const [deleteConfirm, setDeleteConfirm] = useState({ open: false, job: null });
   const firstFieldRef = useRef(null);
 
   // Common tech skills to look for in job descriptions
@@ -285,9 +291,20 @@ function JobsView() {
     });
   };
 
-  const handleDelete = (id) => {
-    const updatedJobs = jobs.filter((j) => j.id !== id);
-    saveJobs(updatedJobs);
+  const handleDeleteClick = (job) => {
+    setDeleteConfirm({ open: true, job });
+  };
+
+  const handleDeleteConfirm = () => {
+    if (deleteConfirm.job) {
+      const updatedJobs = jobs.filter((j) => j.id !== deleteConfirm.job.id);
+      saveJobs(updatedJobs);
+    }
+    setDeleteConfirm({ open: false, job: null });
+  };
+
+  const handleDeleteCancel = () => {
+    setDeleteConfirm({ open: false, job: null });
   };
 
   const handleEdit = (job) => {
@@ -711,7 +728,7 @@ function JobsView() {
                           </IconButton>
                           <IconButton
                             size="small"
-                            onClick={() => handleDelete(job.id)}
+                            onClick={() => handleDeleteClick(job)}
                             sx={{
                               color: 'error.main',
                               '&:hover': { background: 'rgba(239, 68, 68, 0.1)' },
@@ -909,8 +926,8 @@ function JobsView() {
                         variant="contained"
                         onClick={() => {
                           setQuickMatchJob(null);
-                          // Navigate to compare tab - trigger via URL or event
-                          window.dispatchEvent(new CustomEvent('navigate', { detail: 'compare' }));
+                          // Navigate to compare tab
+                          onNavigate?.('comparison');
                         }}
                         sx={{ py: 1.5 }}
                       >
@@ -925,6 +942,43 @@ function JobsView() {
         </AnimatePresence>
         </>
       )}
+
+      {/* Delete Confirmation Dialog */}
+      <Dialog
+        open={deleteConfirm.open}
+        onClose={handleDeleteCancel}
+        PaperProps={{
+          sx: {
+            background: 'rgba(15, 15, 35, 0.98)',
+            backdropFilter: 'blur(20px)',
+            border: '1px solid rgba(255, 255, 255, 0.1)',
+          },
+        }}
+      >
+        <DialogTitle sx={{ fontWeight: 600 }}>Delete Job?</DialogTitle>
+        <DialogContent>
+          <DialogContentText sx={{ color: 'text.secondary' }}>
+            Are you sure you want to delete "{deleteConfirm.job?.title}" at {deleteConfirm.job?.company}? This action cannot be undone.
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions sx={{ p: 2, pt: 0 }}>
+          <Button onClick={handleDeleteCancel} sx={{ color: 'text.secondary' }}>
+            Cancel
+          </Button>
+          <Button
+            onClick={handleDeleteConfirm}
+            variant="contained"
+            sx={{
+              background: 'linear-gradient(135deg, #EF4444 0%, #DC2626 100%)',
+              '&:hover': {
+                background: 'linear-gradient(135deg, #DC2626 0%, #B91C1C 100%)',
+              },
+            }}
+          >
+            Delete
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   );
 }

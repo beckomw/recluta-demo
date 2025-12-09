@@ -5,7 +5,6 @@ import DescriptionIcon from '@mui/icons-material/Description';
 import WorkIcon from '@mui/icons-material/Work';
 import CompareArrowsIcon from '@mui/icons-material/CompareArrows';
 import DashboardIcon from '@mui/icons-material/Dashboard';
-import MenuIcon from '@mui/icons-material/Menu';
 import CloseIcon from '@mui/icons-material/Close';
 import Header from './components/Header';
 import HeroSection from './components/HeroSection';
@@ -120,7 +119,11 @@ function App() {
 
   return (
     <Box sx={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
-      <Header />
+      <Header
+        isMobile={isMobile}
+        onMenuClick={() => setMobileOpen(true)}
+        onLogoClick={() => setShowHero(true)}
+      />
 
       <AnimatePresence mode="wait">
         {showHero && (
@@ -154,46 +157,26 @@ function App() {
         )}
 
         {isMobile && (
-          <>
-            <IconButton
-              onClick={() => setMobileOpen(true)}
-              sx={{
-                position: 'fixed',
-                bottom: 20,
-                right: 20,
-                width: 56,
-                height: 56,
-                background: 'linear-gradient(135deg, #8B5CF6 0%, #06B6D4 100%)',
-                zIndex: 1000,
-                boxShadow: '0 4px 20px rgba(139, 92, 246, 0.5)',
-                '&:hover': {
-                  background: 'linear-gradient(135deg, #7C3AED 0%, #0891B2 100%)',
-                },
-              }}
-            >
-              <MenuIcon />
-            </IconButton>
-            <Drawer
-              anchor="left"
-              open={mobileOpen}
-              onClose={() => setMobileOpen(false)}
-              PaperProps={{
-                sx: {
-                  width: 280,
-                  background: 'rgba(15, 15, 35, 0.98)',
-                  backdropFilter: 'blur(20px)',
-                  borderRight: '1px solid rgba(255, 255, 255, 0.1)',
-                },
-              }}
-            >
-              <Box sx={{ display: 'flex', justifyContent: 'flex-end', p: 2 }}>
-                <IconButton onClick={() => setMobileOpen(false)}>
-                  <CloseIcon />
-                </IconButton>
-              </Box>
-              <NavContent />
-            </Drawer>
-          </>
+          <Drawer
+            anchor="left"
+            open={mobileOpen}
+            onClose={() => setMobileOpen(false)}
+            PaperProps={{
+              sx: {
+                width: 280,
+                background: 'rgba(15, 15, 35, 0.98)',
+                backdropFilter: 'blur(20px)',
+                borderRight: '1px solid rgba(255, 255, 255, 0.1)',
+              },
+            }}
+          >
+            <Box sx={{ display: 'flex', justifyContent: 'flex-end', p: 2 }}>
+              <IconButton onClick={() => setMobileOpen(false)}>
+                <CloseIcon />
+              </IconButton>
+            </Box>
+            <NavContent />
+          </Drawer>
         )}
 
         <Box sx={{ flex: 1, p: { xs: 2, md: 4 } }}>
@@ -207,7 +190,7 @@ function App() {
                 transition={{ duration: 0.3 }}
               >
                 {currentView === 'resume' && <ResumeView />}
-                {currentView === 'jobs' && <JobsView />}
+                {currentView === 'jobs' && <JobsView onNavigate={setCurrentView} />}
                 {currentView === 'comparison' && <ComparisonView />}
               </motion.div>
             </AnimatePresence>

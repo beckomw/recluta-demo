@@ -11,6 +11,11 @@ import {
   Alert,
   Grid,
   Collapse,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogContentText,
+  DialogActions,
 } from '@mui/material';
 import { motion, AnimatePresence } from 'framer-motion';
 import CloudUploadIcon from '@mui/icons-material/CloudUpload';
@@ -51,6 +56,7 @@ function ResumeView() {
   const [quickStartSkills, setQuickStartSkills] = useState('');
   const [showAdvanced, setShowAdvanced] = useState(false);
   const [errors, setErrors] = useState({});
+  const [deleteConfirm, setDeleteConfirm] = useState({ open: false, resume: null });
   const firstFieldRef = useRef(null);
   const quickStartRef = useRef(null);
 
@@ -173,9 +179,20 @@ function ResumeView() {
     });
   };
 
-  const handleDelete = (id) => {
-    const updatedResumes = resumes.filter((r) => r.id !== id);
-    saveResumes(updatedResumes);
+  const handleDeleteClick = (resume) => {
+    setDeleteConfirm({ open: true, resume });
+  };
+
+  const handleDeleteConfirm = () => {
+    if (deleteConfirm.resume) {
+      const updatedResumes = resumes.filter((r) => r.id !== deleteConfirm.resume.id);
+      saveResumes(updatedResumes);
+    }
+    setDeleteConfirm({ open: false, resume: null });
+  };
+
+  const handleDeleteCancel = () => {
+    setDeleteConfirm({ open: false, resume: null });
   };
 
   const handleEdit = (resume) => {
@@ -769,7 +786,7 @@ function ResumeView() {
                           </IconButton>
                           <IconButton
                             size="small"
-                            onClick={() => handleDelete(resume.id)}
+                            onClick={() => handleDeleteClick(resume)}
                             sx={{
                               color: 'error.main',
                               '&:hover': { background: 'rgba(239, 68, 68, 0.1)' },
@@ -803,6 +820,43 @@ function ResumeView() {
           </Grid>
         )}
       </motion.div>
+
+      {/* Delete Confirmation Dialog */}
+      <Dialog
+        open={deleteConfirm.open}
+        onClose={handleDeleteCancel}
+        PaperProps={{
+          sx: {
+            background: 'rgba(15, 15, 35, 0.98)',
+            backdropFilter: 'blur(20px)',
+            border: '1px solid rgba(255, 255, 255, 0.1)',
+          },
+        }}
+      >
+        <DialogTitle sx={{ fontWeight: 600 }}>Delete Resume?</DialogTitle>
+        <DialogContent>
+          <DialogContentText sx={{ color: 'text.secondary' }}>
+            Are you sure you want to delete "{deleteConfirm.resume?.title}"? This action cannot be undone.
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions sx={{ p: 2, pt: 0 }}>
+          <Button onClick={handleDeleteCancel} sx={{ color: 'text.secondary' }}>
+            Cancel
+          </Button>
+          <Button
+            onClick={handleDeleteConfirm}
+            variant="contained"
+            sx={{
+              background: 'linear-gradient(135deg, #EF4444 0%, #DC2626 100%)',
+              '&:hover': {
+                background: 'linear-gradient(135deg, #DC2626 0%, #B91C1C 100%)',
+              },
+            }}
+          >
+            Delete
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   );
 }
