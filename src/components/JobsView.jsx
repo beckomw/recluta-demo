@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   Box,
   Card,
@@ -9,6 +9,7 @@ import {
   IconButton,
   Chip,
   Grid,
+  Collapse,
 } from '@mui/material';
 import { motion, AnimatePresence } from 'framer-motion';
 import DeleteIcon from '@mui/icons-material/Delete';
@@ -20,6 +21,8 @@ import LocationOnIcon from '@mui/icons-material/LocationOn';
 import AddIcon from '@mui/icons-material/Add';
 import SaveIcon from '@mui/icons-material/Save';
 import CloseIcon from '@mui/icons-material/Close';
+import ContentCopyIcon from '@mui/icons-material/ContentCopy';
+import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 
 function JobsView() {
   const [jobs, setJobs] = useState([]);
@@ -33,10 +36,20 @@ function JobsView() {
   });
   const [editId, setEditId] = useState(null);
   const [showForm, setShowForm] = useState(false);
+  const [showAdvanced, setShowAdvanced] = useState(false);
+  const [errors, setErrors] = useState({});
+  const firstFieldRef = useRef(null);
 
   useEffect(() => {
     loadJobs();
   }, []);
+
+  // Auto-focus first field when form opens
+  useEffect(() => {
+    if (showForm && firstFieldRef.current) {
+      setTimeout(() => firstFieldRef.current.focus(), 100);
+    }
+  }, [showForm]);
 
   const loadJobs = () => {
     const stored = localStorage.getItem('app_jobs');
@@ -50,8 +63,31 @@ function JobsView() {
     setJobs(updatedJobs);
   };
 
+  const validateForm = () => {
+    const newErrors = {};
+
+    if (!currentJob.title.trim()) {
+      newErrors.title = 'Job title is required';
+    }
+    if (!currentJob.company.trim()) {
+      newErrors.company = 'Company name is required';
+    }
+    if (!currentJob.requirements.trim()) {
+      newErrors.requirements = 'Required skills are needed for matching';
+    } else if (currentJob.requirements.split(',').filter(s => s.trim()).length < 2) {
+      newErrors.requirements = 'Please enter at least 2 skills separated by commas';
+    }
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
   const handleSubmit = (e) => {
     e.preventDefault();
+
+    if (!validateForm()) {
+      return;
+    }
 
     if (editId) {
       const updatedJobs = jobs.map((j) => (j.id === editId ? { ...currentJob, id: editId } : j));
@@ -63,6 +99,7 @@ function JobsView() {
     }
 
     resetForm();
+    setErrors({});
     setShowForm(false);
   };
 
@@ -88,6 +125,15 @@ function JobsView() {
     setShowForm(true);
   };
 
+  const handleDuplicate = (job) => {
+    const duplicatedJob = {
+      ...job,
+      id: Date.now(),
+      title: `${job.title} (Copy)`,
+    };
+    saveJobs([...jobs, duplicatedJob]);
+  };
+
   return (
     <Box>
       <motion.div
@@ -98,10 +144,10 @@ function JobsView() {
         <Box sx={{ mb: 4, display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 2 }}>
           <Box>
             <Typography variant="h4" sx={{ fontWeight: 700, mb: 1 }}>
-              Job Tracker
+              Track Jobs
             </Typography>
             <Typography variant="body1" sx={{ color: 'text.secondary' }}>
-              Save and track job postings you're interested in
+              Save job postings you want to compare against your profile
             </Typography>
           </Box>
           {!showForm && (
@@ -158,9 +204,15 @@ function JobsView() {
                         fullWidth
                         label="Job Title"
                         required
+                        inputRef={firstFieldRef}
                         placeholder="e.g., Senior Software Engineer"
                         value={currentJob.title}
-                        onChange={(e) => setCurrentJob({ ...currentJob, title: e.target.value })}
+                        onChange={(e) => {
+                          setCurrentJob({ ...currentJob, title: e.target.value });
+                          if (errors.title) setErrors({ ...errors, title: '' });
+                        }}
+                        error={!!errors.title}
+                        helperText={errors.title}
                       />
                     </Grid>
                     <Grid size={{ xs: 12, sm: 6 }}>
@@ -170,55 +222,90 @@ function JobsView() {
                         required
                         placeholder="e.g., Tech Corp Inc."
                         value={currentJob.company}
-                        onChange={(e) => setCurrentJob({ ...currentJob, company: e.target.value })}
-                      />
-                    </Grid>
-                    <Grid size={{ xs: 12, sm: 6 }}>
-                      <TextField
-                        fullWidth
-                        label="Location"
-                        placeholder="e.g., Remote, San Francisco, CA"
-                        value={currentJob.location}
-                        onChange={(e) => setCurrentJob({ ...currentJob, location: e.target.value })}
-                      />
-                    </Grid>
-                    <Grid size={{ xs: 12, sm: 6 }}>
-                      <TextField
-                        fullWidth
-                        label="Job Posting URL"
-                        type="url"
-                        placeholder="https://..."
-                        value={currentJob.url}
-                        onChange={(e) => setCurrentJob({ ...currentJob, url: e.target.value })}
+                        onChange={(e) => {
+                          setCurrentJob({ ...currentJob, company: e.target.value });
+                          if (errors.company) setErrors({ ...errors, company: '' });
+                        }}
+                        error={!!errors.company}
+                        helperText={errors.company}
                       />
                     </Grid>
                     <Grid size={{ xs: 12 }}>
                       <TextField
                         fullWidth
                         multiline
-                        rows={4}
-                        label="Job Description"
-                        placeholder="Paste the full job description here"
-                        value={currentJob.description}
-                        onChange={(e) => setCurrentJob({ ...currentJob, description: e.target.value })}
-                      />
-                    </Grid>
-                    <Grid size={{ xs: 12 }}>
-                      <TextField
-                        fullWidth
-                        multiline
-                        rows={4}
-                        label="Requirements & Qualifications"
+                        rows={3}
+                        label="Required Skills"
                         required
-                        placeholder="List the required skills, experience, and qualifications from the job posting"
+                        placeholder="React, TypeScript, Node.js, AWS, 3+ years experience..."
                         value={currentJob.requirements}
-                        onChange={(e) => setCurrentJob({ ...currentJob, requirements: e.target.value })}
-                        helperText="Include all technical skills, years of experience, education requirements, etc."
+                        onChange={(e) => {
+                          setCurrentJob({ ...currentJob, requirements: e.target.value });
+                          if (errors.requirements) setErrors({ ...errors, requirements: '' });
+                        }}
+                        error={!!errors.requirements}
+                        helperText={errors.requirements || "Separate skills with commas - this is used for matching against your resume"}
                       />
                     </Grid>
                   </Grid>
 
-                  <Box sx={{ display: 'flex', gap: 2, mt: 3 }}>
+                  {/* Expandable Advanced Section */}
+                  <Box sx={{ mt: 2, mb: 2 }}>
+                    <Button
+                      onClick={() => setShowAdvanced(!showAdvanced)}
+                      sx={{
+                        color: 'text.secondary',
+                        textTransform: 'none',
+                        '&:hover': { background: 'rgba(255, 255, 255, 0.05)' },
+                      }}
+                      endIcon={
+                        <ExpandMoreIcon
+                          sx={{
+                            transform: showAdvanced ? 'rotate(180deg)' : 'rotate(0deg)',
+                            transition: 'transform 0.3s ease',
+                          }}
+                        />
+                      }
+                    >
+                      {showAdvanced ? 'Hide' : 'Show'} Additional Details
+                    </Button>
+                    <Collapse in={showAdvanced}>
+                      <Grid container spacing={2} sx={{ mt: 1 }}>
+                        <Grid size={{ xs: 12, sm: 6 }}>
+                          <TextField
+                            fullWidth
+                            label="Location"
+                            placeholder="e.g., Remote, San Francisco, CA"
+                            value={currentJob.location}
+                            onChange={(e) => setCurrentJob({ ...currentJob, location: e.target.value })}
+                          />
+                        </Grid>
+                        <Grid size={{ xs: 12, sm: 6 }}>
+                          <TextField
+                            fullWidth
+                            label="Job Posting URL"
+                            type="url"
+                            placeholder="https://..."
+                            value={currentJob.url}
+                            onChange={(e) => setCurrentJob({ ...currentJob, url: e.target.value })}
+                          />
+                        </Grid>
+                        <Grid size={{ xs: 12 }}>
+                          <TextField
+                            fullWidth
+                            multiline
+                            rows={3}
+                            label="Full Job Description"
+                            placeholder="Paste the full job description here (optional)"
+                            value={currentJob.description}
+                            onChange={(e) => setCurrentJob({ ...currentJob, description: e.target.value })}
+                          />
+                        </Grid>
+                      </Grid>
+                    </Collapse>
+                  </Box>
+
+                  <Box sx={{ display: 'flex', gap: 2 }}>
                     <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} style={{ flex: 1 }}>
                       <Button
                         type="submit"
@@ -254,9 +341,19 @@ function JobsView() {
             <Typography variant="h6" sx={{ color: 'text.secondary', mb: 1 }}>
               No jobs saved yet
             </Typography>
-            <Typography variant="body2" sx={{ color: 'text.secondary' }}>
-              Add job postings you're interested in to track and compare them
+            <Typography variant="body2" sx={{ color: 'text.secondary', mb: 3 }}>
+              Add job postings you're interested in to compare against your resume
             </Typography>
+            <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
+              <Button
+                variant="contained"
+                startIcon={<AddIcon />}
+                onClick={() => setShowForm(true)}
+                sx={{ px: 4, py: 1.5 }}
+              >
+                Add Your First Job
+              </Button>
+            </motion.div>
           </CardContent>
         </Card>
       ) : (
@@ -297,11 +394,23 @@ function JobsView() {
                       <Box>
                         <IconButton
                           size="small"
+                          onClick={() => handleDuplicate(job)}
+                          sx={{
+                            color: 'secondary.main',
+                            '&:hover': { background: 'rgba(6, 182, 212, 0.1)' },
+                          }}
+                          title="Duplicate"
+                        >
+                          <ContentCopyIcon fontSize="small" />
+                        </IconButton>
+                        <IconButton
+                          size="small"
                           onClick={() => handleEdit(job)}
                           sx={{
                             color: 'primary.main',
                             '&:hover': { background: 'rgba(139, 92, 246, 0.1)' },
                           }}
+                          title="Edit"
                         >
                           <EditIcon fontSize="small" />
                         </IconButton>
@@ -312,6 +421,7 @@ function JobsView() {
                             color: 'error.main',
                             '&:hover': { background: 'rgba(239, 68, 68, 0.1)' },
                           }}
+                          title="Delete"
                         >
                           <DeleteIcon fontSize="small" />
                         </IconButton>

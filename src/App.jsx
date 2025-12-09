@@ -16,10 +16,9 @@ import DashboardView from './components/DashboardView';
 import Footer from './components/Footer';
 
 const navItems = [
-  { id: 'resume', label: 'Resumes', icon: DescriptionIcon },
-  { id: 'jobs', label: 'Jobs', icon: WorkIcon },
-  { id: 'comparison', label: 'Compare', icon: CompareArrowsIcon },
-  { id: 'dashboard', label: 'Dashboard', icon: DashboardIcon },
+  { id: 'resume', label: 'My Profile', icon: DescriptionIcon },
+  { id: 'jobs', label: 'Track Jobs', icon: WorkIcon },
+  { id: 'comparison', label: 'Compare & Insights', icon: CompareArrowsIcon },
 ];
 
 function App() {
@@ -210,7 +209,6 @@ function App() {
                 {currentView === 'resume' && <ResumeView />}
                 {currentView === 'jobs' && <JobsView />}
                 {currentView === 'comparison' && <ComparisonView />}
-                {currentView === 'dashboard' && <DashboardView />}
               </motion.div>
             </AnimatePresence>
           </Container>

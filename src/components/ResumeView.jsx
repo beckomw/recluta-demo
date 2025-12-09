@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   Box,
   Card,
@@ -10,6 +10,7 @@ import {
   IconButton,
   Alert,
   Grid,
+  Collapse,
 } from '@mui/material';
 import { motion, AnimatePresence } from 'framer-motion';
 import CloudUploadIcon from '@mui/icons-material/CloudUpload';
@@ -21,6 +22,8 @@ import EmailIcon from '@mui/icons-material/Email';
 import LocationOnIcon from '@mui/icons-material/LocationOn';
 import AddIcon from '@mui/icons-material/Add';
 import SaveIcon from '@mui/icons-material/Save';
+import ContentCopyIcon from '@mui/icons-material/ContentCopy';
+import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 
 const cardVariants = {
   hidden: { opacity: 0, y: 20 },
@@ -42,10 +45,20 @@ function ResumeView() {
   const [pdfStatus, setPdfStatus] = useState('');
   const [editId, setEditId] = useState(null);
   const [showForm, setShowForm] = useState(false);
+  const [showAdvanced, setShowAdvanced] = useState(false);
+  const [errors, setErrors] = useState({});
+  const firstFieldRef = useRef(null);
 
   useEffect(() => {
     loadResumes();
   }, []);
+
+  // Auto-focus first field when form opens
+  useEffect(() => {
+    if (showForm && firstFieldRef.current) {
+      setTimeout(() => firstFieldRef.current.focus(), 100);
+    }
+  }, [showForm]);
 
   const loadResumes = () => {
     const stored = localStorage.getItem('app_resumes');
@@ -59,8 +72,39 @@ function ResumeView() {
     setResumes(updatedResumes);
   };
 
+  const validateForm = () => {
+    const newErrors = {};
+
+    if (!currentResume.firstName.trim()) {
+      newErrors.firstName = 'First name is required';
+    }
+    if (!currentResume.lastName.trim()) {
+      newErrors.lastName = 'Last name is required';
+    }
+    if (!currentResume.email.trim()) {
+      newErrors.email = 'Email is required';
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(currentResume.email)) {
+      newErrors.email = 'Please enter a valid email address';
+    }
+    if (!currentResume.zipcode.trim()) {
+      newErrors.zipcode = 'Zipcode is required';
+    }
+    if (!currentResume.skills.trim()) {
+      newErrors.skills = 'Skills are required for job matching';
+    } else if (currentResume.skills.split(',').filter(s => s.trim()).length < 2) {
+      newErrors.skills = 'Please enter at least 2 skills separated by commas';
+    }
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
   const handleSubmit = (e) => {
     e.preventDefault();
+
+    if (!validateForm()) {
+      return;
+    }
 
     if (editId) {
       const updatedResumes = resumes.map((r) => (r.id === editId ? { ...currentResume, id: editId } : r));
@@ -72,6 +116,7 @@ function ResumeView() {
     }
 
     resetForm();
+    setErrors({});
     setShowForm(false);
   };
 
@@ -99,6 +144,15 @@ function ResumeView() {
     setShowForm(true);
   };
 
+  const handleDuplicate = (resume) => {
+    const duplicatedResume = {
+      ...resume,
+      id: Date.now(),
+      title: `${resume.title} (Copy)`,
+    };
+    saveResumes([...resumes, duplicatedResume]);
+  };
+
   const handlePdfUpload = async (e) => {
     const file = e.target.files[0];
     if (!file) return;
@@ -121,10 +175,10 @@ function ResumeView() {
       >
         <Box sx={{ mb: 4 }}>
           <Typography variant="h4" sx={{ fontWeight: 700, mb: 1 }}>
-            Resume Manager
+            My Profile
           </Typography>
           <Typography variant="body1" sx={{ color: 'text.secondary' }}>
-            Create and manage multiple versions of your resume
+            Create and manage your resume profiles
           </Typography>
         </Box>
       </motion.div>
@@ -243,8 +297,14 @@ function ResumeView() {
                           fullWidth
                           label="First Name"
                           required
+                          inputRef={firstFieldRef}
                           value={currentResume.firstName}
-                          onChange={(e) => setCurrentResume({ ...currentResume, firstName: e.target.value })}
+                          onChange={(e) => {
+                            setCurrentResume({ ...currentResume, firstName: e.target.value });
+                            if (errors.firstName) setErrors({ ...errors, firstName: '' });
+                          }}
+                          error={!!errors.firstName}
+                          helperText={errors.firstName}
                         />
                       </Grid>
                       <Grid size={{ xs: 12, sm: 6 }}>
@@ -253,7 +313,12 @@ function ResumeView() {
                           label="Last Name"
                           required
                           value={currentResume.lastName}
-                          onChange={(e) => setCurrentResume({ ...currentResume, lastName: e.target.value })}
+                          onChange={(e) => {
+                            setCurrentResume({ ...currentResume, lastName: e.target.value });
+                            if (errors.lastName) setErrors({ ...errors, lastName: '' });
+                          }}
+                          error={!!errors.lastName}
+                          helperText={errors.lastName}
                         />
                       </Grid>
                       <Grid size={{ xs: 12, sm: 6 }}>
@@ -263,7 +328,12 @@ function ResumeView() {
                           type="email"
                           required
                           value={currentResume.email}
-                          onChange={(e) => setCurrentResume({ ...currentResume, email: e.target.value })}
+                          onChange={(e) => {
+                            setCurrentResume({ ...currentResume, email: e.target.value });
+                            if (errors.email) setErrors({ ...errors, email: '' });
+                          }}
+                          error={!!errors.email}
+                          helperText={errors.email}
                         />
                       </Grid>
                       <Grid size={{ xs: 12, sm: 6 }}>
@@ -272,7 +342,12 @@ function ResumeView() {
                           label="Zipcode"
                           required
                           value={currentResume.zipcode}
-                          onChange={(e) => setCurrentResume({ ...currentResume, zipcode: e.target.value })}
+                          onChange={(e) => {
+                            setCurrentResume({ ...currentResume, zipcode: e.target.value });
+                            if (errors.zipcode) setErrors({ ...errors, zipcode: '' });
+                          }}
+                          error={!!errors.zipcode}
+                          helperText={errors.zipcode}
                         />
                       </Grid>
                     </Grid>
@@ -297,33 +372,62 @@ function ResumeView() {
                       fullWidth
                       multiline
                       rows={3}
-                      label="Professional Summary"
-                      placeholder="Brief overview of your professional background and goals"
-                      value={currentResume.summary}
-                      onChange={(e) => setCurrentResume({ ...currentResume, summary: e.target.value })}
-                      sx={{ mb: 2 }}
-                    />
-                    <TextField
-                      fullWidth
-                      multiline
-                      rows={3}
                       label="Skills"
                       required
                       placeholder="JavaScript, React, Node.js, Python, SQL, AWS..."
                       value={currentResume.skills}
-                      onChange={(e) => setCurrentResume({ ...currentResume, skills: e.target.value })}
-                      helperText="Separate skills with commas for better matching"
-                      sx={{ mb: 2 }}
+                      onChange={(e) => {
+                        setCurrentResume({ ...currentResume, skills: e.target.value });
+                        if (errors.skills) setErrors({ ...errors, skills: '' });
+                      }}
+                      error={!!errors.skills}
+                      helperText={errors.skills || "Separate skills with commas - this is the key field for job matching"}
                     />
-                    <TextField
-                      fullWidth
-                      multiline
-                      rows={5}
-                      label="Work Experience"
-                      placeholder="List your work experience, job titles, companies, and key responsibilities..."
-                      value={currentResume.experience}
-                      onChange={(e) => setCurrentResume({ ...currentResume, experience: e.target.value })}
-                    />
+                  </Box>
+
+                  {/* Expandable Advanced Section */}
+                  <Box sx={{ mb: 3 }}>
+                    <Button
+                      onClick={() => setShowAdvanced(!showAdvanced)}
+                      sx={{
+                        color: 'text.secondary',
+                        textTransform: 'none',
+                        '&:hover': { background: 'rgba(255, 255, 255, 0.05)' },
+                      }}
+                      endIcon={
+                        <ExpandMoreIcon
+                          sx={{
+                            transform: showAdvanced ? 'rotate(180deg)' : 'rotate(0deg)',
+                            transition: 'transform 0.3s ease',
+                          }}
+                        />
+                      }
+                    >
+                      {showAdvanced ? 'Hide' : 'Show'} Additional Details
+                    </Button>
+                    <Collapse in={showAdvanced}>
+                      <Box sx={{ mt: 2 }}>
+                        <TextField
+                          fullWidth
+                          multiline
+                          rows={3}
+                          label="Professional Summary"
+                          placeholder="Brief overview of your professional background and goals (optional)"
+                          value={currentResume.summary}
+                          onChange={(e) => setCurrentResume({ ...currentResume, summary: e.target.value })}
+                          sx={{ mb: 2 }}
+                        />
+                        <TextField
+                          fullWidth
+                          multiline
+                          rows={4}
+                          label="Work Experience"
+                          placeholder="List your work experience, job titles, companies, and key responsibilities (optional)"
+                          value={currentResume.experience}
+                          onChange={(e) => setCurrentResume({ ...currentResume, experience: e.target.value })}
+                        />
+                      </Box>
+                    </Collapse>
                   </Box>
 
                   <Box sx={{ display: 'flex', gap: 2 }}>
@@ -381,9 +485,19 @@ function ResumeView() {
               <Typography variant="h6" sx={{ color: 'text.secondary', mb: 1 }}>
                 No resumes yet
               </Typography>
-              <Typography variant="body2" sx={{ color: 'text.secondary' }}>
-                Upload a PDF or create one manually to get started
+              <Typography variant="body2" sx={{ color: 'text.secondary', mb: 3 }}>
+                Create your first resume to start comparing against job postings
               </Typography>
+              <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
+                <Button
+                  variant="contained"
+                  startIcon={<AddIcon />}
+                  onClick={() => setShowForm(true)}
+                  sx={{ px: 4, py: 1.5 }}
+                >
+                  Create Your First Resume
+                </Button>
+              </motion.div>
             </CardContent>
           </Card>
         ) : (
@@ -424,11 +538,23 @@ function ResumeView() {
                         <Box>
                           <IconButton
                             size="small"
+                            onClick={() => handleDuplicate(resume)}
+                            sx={{
+                              color: 'secondary.main',
+                              '&:hover': { background: 'rgba(6, 182, 212, 0.1)' },
+                            }}
+                            title="Duplicate"
+                          >
+                            <ContentCopyIcon fontSize="small" />
+                          </IconButton>
+                          <IconButton
+                            size="small"
                             onClick={() => handleEdit(resume)}
                             sx={{
                               color: 'primary.main',
                               '&:hover': { background: 'rgba(139, 92, 246, 0.1)' },
                             }}
+                            title="Edit"
                           >
                             <EditIcon fontSize="small" />
                           </IconButton>
@@ -439,6 +565,7 @@ function ResumeView() {
                               color: 'error.main',
                               '&:hover': { background: 'rgba(239, 68, 68, 0.1)' },
                             }}
+                            title="Delete"
                           >
                             <DeleteIcon fontSize="small" />
                           </IconButton>
