@@ -1,9 +1,10 @@
 import React from 'react';
-import { AppBar, Toolbar, Typography, Box } from '@mui/material';
+import { AppBar, Toolbar, Typography, Box, IconButton } from '@mui/material';
 import { motion } from 'framer-motion';
 import AutoAwesomeIcon from '@mui/icons-material/AutoAwesome';
+import MenuIcon from '@mui/icons-material/Menu';
 
-function Header() {
+function Header({ isMobile, onMenuClick, onLogoClick }) {
   return (
     <AppBar
       position="sticky"
@@ -14,13 +15,52 @@ function Header() {
         boxShadow: 'none',
       }}
     >
-      <Toolbar sx={{ height: 70, justifyContent: 'center' }}>
+      <Toolbar sx={{ height: 70, justifyContent: 'space-between' }}>
+        {/* Left side - Menu button on mobile */}
+        <Box sx={{ width: 48, display: 'flex', justifyContent: 'flex-start' }}>
+          {isMobile && (
+            <IconButton
+              onClick={onMenuClick}
+              sx={{
+                color: 'white',
+                '&:hover': {
+                  background: 'rgba(139, 92, 246, 0.2)',
+                },
+              }}
+              aria-label="Open navigation menu"
+            >
+              <MenuIcon />
+            </IconButton>
+          )}
+        </Box>
+
+        {/* Center - Logo */}
         <motion.div
           initial={{ opacity: 0, y: -10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5 }}
         >
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+          <Box
+            onClick={onLogoClick}
+            sx={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 1.5,
+              cursor: 'pointer',
+              transition: 'transform 0.2s ease',
+              '&:hover': {
+                transform: 'scale(1.02)',
+              },
+            }}
+            role="button"
+            tabIndex={0}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' || e.key === ' ') {
+                onLogoClick?.();
+              }
+            }}
+            aria-label="Return to home"
+          >
             <Box
               sx={{
                 width: 40,
@@ -50,6 +90,9 @@ function Header() {
             </Typography>
           </Box>
         </motion.div>
+
+        {/* Right side - Placeholder for balance */}
+        <Box sx={{ width: 48 }} />
       </Toolbar>
     </AppBar>
   );
