@@ -4,7 +4,9 @@
     "description": "Job Application Readiness Platform - Assess your competitiveness before applying",
     "main": "index.html",
     "scripts": {
-        "dev": "npx serve",
+        "dev": "vite",
+        "build": "vite build",
+        "preview": "vite preview",
         "deploy": "vercel"
     },
     "keywords": [
@@ -15,5 +17,15 @@
         "skills-analysis"
     ],
     "author": "",
-    "license": "MIT"
+    "license": "MIT",
+    "dependencies": {
+        "@emotion/react": "^11.14.0",
+        "@emotion/styled": "^11.14.1",
+        "@mui/icons-material": "^7.3.6",
+        "@mui/material": "^7.3.6",
+        "@vitejs/plugin-react": "^5.1.2",
+        "react": "^19.2.1",
+        "react-dom": "^19.2.1",
+        "vite": "^7.2.7"
+    }
 }
