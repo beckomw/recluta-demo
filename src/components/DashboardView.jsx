@@ -4,22 +4,40 @@ import {
   Card,
   CardContent,
   Typography,
-  Grid,
   LinearProgress,
   Chip,
-  Paper,
-  List,
-  ListItem,
-  ListItemText,
+  Grid,
 } from '@mui/material';
+import { motion } from 'framer-motion';
 import EmojiEventsIcon from '@mui/icons-material/EmojiEvents';
 import LocalFireDepartmentIcon from '@mui/icons-material/LocalFireDepartment';
 import FlashOnIcon from '@mui/icons-material/FlashOn';
 import StarIcon from '@mui/icons-material/Star';
+import DescriptionIcon from '@mui/icons-material/Description';
+import WorkIcon from '@mui/icons-material/Work';
+import CompareArrowsIcon from '@mui/icons-material/CompareArrows';
+import TrendingUpIcon from '@mui/icons-material/TrendingUp';
+import LockIcon from '@mui/icons-material/Lock';
+
+const containerVariants = {
+  hidden: { opacity: 0 },
+  visible: {
+    opacity: 1,
+    transition: {
+      staggerChildren: 0.1,
+    },
+  },
+};
+
+const itemVariants = {
+  hidden: { opacity: 0, y: 20 },
+  visible: { opacity: 1, y: 0 },
+};
 
 function DashboardView() {
   const [stats, setStats] = useState({
     comparisons: 0,
+    resumes: 0,
     jobs: 0,
     avgMatch: 0,
     bestMatch: 0,
@@ -28,7 +46,6 @@ function DashboardView() {
     streak: 0,
   });
   const [topSkills, setTopSkills] = useState([]);
-  const [missingSkills, setMissingSkills] = useState([]);
 
   useEffect(() => {
     calculateStats();
@@ -38,14 +55,18 @@ function DashboardView() {
     const jobs = JSON.parse(localStorage.getItem('app_jobs') || '[]');
     const resumes = JSON.parse(localStorage.getItem('app_resumes') || '[]');
 
+    const xpEarned = (resumes.length * 50) + (jobs.length * 30);
+    const level = Math.floor(xpEarned / 200) + 1;
+
     setStats({
-      comparisons: Math.floor(Math.random() * 20),
+      comparisons: resumes.length > 0 && jobs.length > 0 ? resumes.length * jobs.length : 0,
+      resumes: resumes.length,
       jobs: jobs.length,
-      avgMatch: jobs.length > 0 ? Math.floor(Math.random() * 100) : 0,
-      bestMatch: jobs.length > 0 ? Math.floor(Math.random() * 100) : 0,
-      level: 1,
-      xp: 150,
-      streak: 3,
+      avgMatch: jobs.length > 0 ? Math.floor(Math.random() * 40) + 40 : 0,
+      bestMatch: jobs.length > 0 ? Math.floor(Math.random() * 30) + 70 : 0,
+      level,
+      xp: xpEarned % 200,
+      streak: Math.min(resumes.length + jobs.length, 7),
     });
 
     if (jobs.length > 0) {
@@ -63,212 +84,343 @@ function DashboardView() {
         .slice(0, 5);
 
       setTopSkills(sorted);
-      setMissingSkills(sorted.slice(0, 3));
     }
   };
 
   const achievements = [
-    { name: 'First Steps', description: 'Create your first resume', icon: '🎯', unlocked: true },
-    { name: 'Job Hunter', description: 'Add 5 job postings', icon: '🔍', unlocked: false },
-    { name: 'Perfect Match', description: 'Get a 100% match score', icon: '💯', unlocked: false },
-    { name: 'Consistent', description: 'Use the app 7 days in a row', icon: '🔥', unlocked: false },
+    { name: 'First Steps', description: 'Create your first resume', icon: '🎯', unlocked: stats.resumes >= 1, color: '#8B5CF6' },
+    { name: 'Job Hunter', description: 'Add 3 job postings', icon: '🔍', unlocked: stats.jobs >= 3, color: '#06B6D4' },
+    { name: 'Analyzer', description: 'Make 5 comparisons', icon: '📊', unlocked: stats.comparisons >= 5, color: '#10B981' },
+    { name: 'On Fire', description: '7 day streak', icon: '🔥', unlocked: stats.streak >= 7, color: '#F59E0B' },
+  ];
+
+  const statCards = [
+    { label: 'Resumes', value: stats.resumes, icon: DescriptionIcon, color: '#8B5CF6' },
+    { label: 'Jobs Saved', value: stats.jobs, icon: WorkIcon, color: '#06B6D4' },
+    { label: 'Comparisons', value: stats.comparisons, icon: CompareArrowsIcon, color: '#EC4899' },
+    { label: 'Best Match', value: `${stats.bestMatch}%`, icon: TrendingUpIcon, color: '#10B981' },
   ];
 
   return (
-    <Box>
-      <Card sx={{ mb: 3, background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)', color: 'white' }}>
-        <CardContent>
-          <Typography variant="h4" gutterBottom fontWeight={700}>
-            Your Job Search Journey
+    <motion.div variants={containerVariants} initial="hidden" animate="visible">
+      <motion.div variants={itemVariants}>
+        <Box sx={{ mb: 4 }}>
+          <Typography variant="h4" sx={{ fontWeight: 700, mb: 1 }}>
+            Your Dashboard
           </Typography>
-          <Typography variant="body1" sx={{ opacity: 0.9, mb: 3 }}>
-            Track your progress from preparation to success
+          <Typography variant="body1" sx={{ color: 'text.secondary' }}>
+            Track your progress and achievements
           </Typography>
+        </Box>
+      </motion.div>
 
-          <Grid container spacing={3}>
-            <Grid item xs={12} sm={4}>
-              <Box sx={{ textAlign: 'center' }}>
-                <FlashOnIcon sx={{ fontSize: 40, mb: 1 }} />
-                <Typography variant="h4" fontWeight={700}>
-                  {stats.level}
-                </Typography>
-                <Typography variant="body2">Level</Typography>
-              </Box>
-            </Grid>
-            <Grid item xs={12} sm={4}>
-              <Box sx={{ textAlign: 'center' }}>
-                <LocalFireDepartmentIcon sx={{ fontSize: 40, mb: 1 }} />
-                <Typography variant="h4" fontWeight={700}>
-                  {stats.streak}
-                </Typography>
-                <Typography variant="body2">Day Streak</Typography>
-              </Box>
-            </Grid>
-            <Grid item xs={12} sm={4}>
-              <Box sx={{ textAlign: 'center' }}>
-                <StarIcon sx={{ fontSize: 40, mb: 1 }} />
-                <Typography variant="h4" fontWeight={700}>
-                  {stats.xp} / 500 XP
-                </Typography>
-                <Typography variant="body2">Experience</Typography>
-              </Box>
-            </Grid>
-          </Grid>
-
-          <Box sx={{ mt: 3 }}>
-            <LinearProgress
-              variant="determinate"
-              value={(stats.xp / 500) * 100}
-              sx={{
-                height: 10,
-                borderRadius: 5,
-                backgroundColor: 'rgba(255,255,255,0.3)',
-                '& .MuiLinearProgress-bar': {
-                  backgroundColor: 'white',
-                },
-              }}
-            />
-          </Box>
-        </CardContent>
-      </Card>
-
-      <Grid container spacing={3} sx={{ mb: 3 }}>
-        <Grid item xs={12} sm={6} md={3}>
-          <Paper sx={{ p: 3, textAlign: 'center' }}>
-            <Typography variant="h4" color="primary" fontWeight={700}>
-              {stats.comparisons}
-            </Typography>
-            <Typography variant="body2" color="text.secondary">
-              Job Comparisons
-            </Typography>
-          </Paper>
-        </Grid>
-        <Grid item xs={12} sm={6} md={3}>
-          <Paper sx={{ p: 3, textAlign: 'center' }}>
-            <Typography variant="h4" color="primary" fontWeight={700}>
-              {stats.jobs}
-            </Typography>
-            <Typography variant="body2" color="text.secondary">
-              Jobs Analyzed
-            </Typography>
-          </Paper>
-        </Grid>
-        <Grid item xs={12} sm={6} md={3}>
-          <Paper sx={{ p: 3, textAlign: 'center', backgroundColor: '#f0f4ff' }}>
-            <Typography variant="h4" color="primary" fontWeight={700}>
-              {stats.avgMatch}%
-            </Typography>
-            <Typography variant="body2" color="text.secondary">
-              Average Match
-            </Typography>
-          </Paper>
-        </Grid>
-        <Grid item xs={12} sm={6} md={3}>
-          <Paper sx={{ p: 3, textAlign: 'center', backgroundColor: '#f0f4ff' }}>
-            <Typography variant="h4" color="primary" fontWeight={700}>
-              {stats.bestMatch}%
-            </Typography>
-            <Typography variant="body2" color="text.secondary">
-              Best Match
-            </Typography>
-          </Paper>
-        </Grid>
-      </Grid>
-
-      <Grid container spacing={3} sx={{ mb: 3 }}>
-        <Grid item xs={12} md={6}>
-          <Card>
-            <CardContent>
-              <Typography variant="h6" gutterBottom fontWeight={600}>
-                Most In-Demand Skills
-              </Typography>
-              <Typography variant="body2" color="text.secondary" gutterBottom>
-                Top skills across all jobs
-              </Typography>
-              {topSkills.length === 0 ? (
-                <Typography color="text.secondary">Add job postings to see insights</Typography>
-              ) : (
-                <List>
-                  {topSkills.map(([skill, count], index) => (
-                    <ListItem key={index}>
-                      <ListItemText
-                        primary={skill}
-                        secondary={`Appears in ${count} job${count > 1 ? 's' : ''}`}
-                      />
-                      <Chip label={`#${index + 1}`} color="primary" size="small" />
-                    </ListItem>
-                  ))}
-                </List>
-              )}
-            </CardContent>
-          </Card>
-        </Grid>
-
-        <Grid item xs={12} md={6}>
-          <Card>
-            <CardContent>
-              <Typography variant="h6" gutterBottom fontWeight={600}>
-                Skills to Learn
-              </Typography>
-              <Typography variant="body2" color="text.secondary" gutterBottom>
-                Most common gaps
-              </Typography>
-              {missingSkills.length === 0 ? (
-                <Typography color="text.secondary">Add job postings to see insights</Typography>
-              ) : (
-                <List>
-                  {missingSkills.map(([skill, count], index) => (
-                    <ListItem key={index}>
-                      <ListItemText
-                        primary={skill}
-                        secondary={`High demand skill`}
-                      />
-                      <Chip label="Learn" color="warning" size="small" />
-                    </ListItem>
-                  ))}
-                </List>
-              )}
-            </CardContent>
-          </Card>
-        </Grid>
-      </Grid>
-
-      <Card>
-        <CardContent>
-          <Typography variant="h6" gutterBottom fontWeight={600}>
-            Achievements
-          </Typography>
-          <Typography variant="body2" color="text.secondary" gutterBottom>
-            Unlock badges by reaching milestones
-          </Typography>
-          <Grid container spacing={2} sx={{ mt: 1 }}>
-            {achievements.map((achievement, index) => (
-              <Grid item xs={12} sm={6} md={3} key={index}>
-                <Paper
-                  sx={{
-                    p: 2,
-                    textAlign: 'center',
-                    opacity: achievement.unlocked ? 1 : 0.4,
-                    border: achievement.unlocked ? 2 : 1,
-                    borderColor: achievement.unlocked ? 'primary.main' : 'divider',
-                  }}
-                >
-                  <Typography variant="h3" sx={{ mb: 1 }}>
-                    {achievement.icon}
-                  </Typography>
-                  <Typography variant="subtitle2" fontWeight={600}>
-                    {achievement.name}
-                  </Typography>
-                  <Typography variant="caption" color="text.secondary">
-                    {achievement.description}
-                  </Typography>
-                </Paper>
+      <motion.div variants={itemVariants}>
+        <Card
+          sx={{
+            mb: 4,
+            background: 'linear-gradient(135deg, rgba(139, 92, 246, 0.2) 0%, rgba(6, 182, 212, 0.15) 100%)',
+            border: '1px solid rgba(139, 92, 246, 0.3)',
+            overflow: 'hidden',
+            position: 'relative',
+          }}
+        >
+          <Box
+            sx={{
+              position: 'absolute',
+              top: -50,
+              right: -50,
+              width: 200,
+              height: 200,
+              borderRadius: '50%',
+              background: 'radial-gradient(circle, rgba(6, 182, 212, 0.3) 0%, transparent 70%)',
+            }}
+          />
+          <CardContent sx={{ p: 4, position: 'relative' }}>
+            <Grid container spacing={4} alignItems="center">
+              <Grid size={{ xs: 12, md: 4 }}>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 3 }}>
+                  <Box
+                    sx={{
+                      width: 80,
+                      height: 80,
+                      borderRadius: 3,
+                      background: 'linear-gradient(135deg, #8B5CF6 0%, #06B6D4 100%)',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      boxShadow: '0 8px 32px rgba(139, 92, 246, 0.4)',
+                    }}
+                  >
+                    <FlashOnIcon sx={{ fontSize: 40, color: 'white' }} />
+                  </Box>
+                  <Box>
+                    <Typography variant="h3" sx={{ fontWeight: 800 }}>
+                      Level {stats.level}
+                    </Typography>
+                    <Typography variant="body2" sx={{ color: 'text.secondary' }}>
+                      {stats.xp} / 200 XP to next level
+                    </Typography>
+                  </Box>
+                </Box>
               </Grid>
-            ))}
+
+              <Grid size={{ xs: 12, md: 8 }}>
+                <Grid container spacing={3}>
+                  <Grid size={{ xs: 6, sm: 3 }}>
+                    <Box sx={{ textAlign: 'center' }}>
+                      <LocalFireDepartmentIcon sx={{ fontSize: 32, color: '#F59E0B', mb: 1 }} />
+                      <Typography variant="h5" sx={{ fontWeight: 700 }}>
+                        {stats.streak}
+                      </Typography>
+                      <Typography variant="caption" sx={{ color: 'text.secondary' }}>
+                        Day Streak
+                      </Typography>
+                    </Box>
+                  </Grid>
+                  <Grid size={{ xs: 6, sm: 3 }}>
+                    <Box sx={{ textAlign: 'center' }}>
+                      <StarIcon sx={{ fontSize: 32, color: '#8B5CF6', mb: 1 }} />
+                      <Typography variant="h5" sx={{ fontWeight: 700 }}>
+                        {stats.xp}
+                      </Typography>
+                      <Typography variant="caption" sx={{ color: 'text.secondary' }}>
+                        Total XP
+                      </Typography>
+                    </Box>
+                  </Grid>
+                  <Grid size={{ xs: 6, sm: 3 }}>
+                    <Box sx={{ textAlign: 'center' }}>
+                      <EmojiEventsIcon sx={{ fontSize: 32, color: '#10B981', mb: 1 }} />
+                      <Typography variant="h5" sx={{ fontWeight: 700 }}>
+                        {achievements.filter(a => a.unlocked).length}
+                      </Typography>
+                      <Typography variant="caption" sx={{ color: 'text.secondary' }}>
+                        Achievements
+                      </Typography>
+                    </Box>
+                  </Grid>
+                  <Grid size={{ xs: 6, sm: 3 }}>
+                    <Box sx={{ textAlign: 'center' }}>
+                      <TrendingUpIcon sx={{ fontSize: 32, color: '#06B6D4', mb: 1 }} />
+                      <Typography variant="h5" sx={{ fontWeight: 700 }}>
+                        {stats.avgMatch}%
+                      </Typography>
+                      <Typography variant="caption" sx={{ color: 'text.secondary' }}>
+                        Avg Match
+                      </Typography>
+                    </Box>
+                  </Grid>
+                </Grid>
+              </Grid>
+            </Grid>
+
+            <Box sx={{ mt: 4 }}>
+              <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
+                <Typography variant="body2" sx={{ color: 'text.secondary' }}>
+                  Progress to Level {stats.level + 1}
+                </Typography>
+                <Typography variant="body2" sx={{ color: 'primary.light' }}>
+                  {Math.round((stats.xp / 200) * 100)}%
+                </Typography>
+              </Box>
+              <LinearProgress
+                variant="determinate"
+                value={(stats.xp / 200) * 100}
+                sx={{
+                  height: 12,
+                  borderRadius: 2,
+                  backgroundColor: 'rgba(255, 255, 255, 0.1)',
+                  '& .MuiLinearProgress-bar': {
+                    background: 'linear-gradient(90deg, #8B5CF6 0%, #06B6D4 100%)',
+                    borderRadius: 2,
+                  },
+                }}
+              />
+            </Box>
+          </CardContent>
+        </Card>
+      </motion.div>
+
+      <Grid container spacing={3} sx={{ mb: 4 }}>
+        {statCards.map((stat, index) => (
+          <Grid size={{ xs: 6, sm: 3 }} key={index}>
+            <motion.div
+              variants={itemVariants}
+              whileHover={{ y: -5, transition: { duration: 0.2 } }}
+            >
+              <Card
+                sx={{
+                  height: '100%',
+                  transition: 'all 0.3s ease',
+                  '&:hover': {
+                    boxShadow: `0 8px 32px ${stat.color}30`,
+                    borderColor: `${stat.color}50`,
+                  },
+                }}
+              >
+                <CardContent sx={{ p: 3, textAlign: 'center' }}>
+                  <Box
+                    sx={{
+                      width: 48,
+                      height: 48,
+                      borderRadius: 2,
+                      background: `${stat.color}20`,
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      mx: 'auto',
+                      mb: 2,
+                    }}
+                  >
+                    <stat.icon sx={{ color: stat.color, fontSize: 24 }} />
+                  </Box>
+                  <Typography variant="h4" sx={{ fontWeight: 700, color: stat.color }}>
+                    {stat.value}
+                  </Typography>
+                  <Typography variant="body2" sx={{ color: 'text.secondary' }}>
+                    {stat.label}
+                  </Typography>
+                </CardContent>
+              </Card>
+            </motion.div>
           </Grid>
-        </CardContent>
-      </Card>
-    </Box>
+        ))}
+      </Grid>
+
+      <Grid container spacing={3} sx={{ mb: 4 }}>
+        <Grid size={{ xs: 12, md: 6 }}>
+          <motion.div variants={itemVariants}>
+            <Card sx={{ height: '100%' }}>
+              <CardContent sx={{ p: 4 }}>
+                <Typography variant="h6" sx={{ fontWeight: 600, mb: 3 }}>
+                  In-Demand Skills
+                </Typography>
+                {topSkills.length === 0 ? (
+                  <Box sx={{ textAlign: 'center', py: 4 }}>
+                    <WorkIcon sx={{ fontSize: 48, color: 'rgba(255, 255, 255, 0.2)', mb: 2 }} />
+                    <Typography sx={{ color: 'text.secondary' }}>
+                      Add job postings to see skill insights
+                    </Typography>
+                  </Box>
+                ) : (
+                  <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                    {topSkills.map(([skill, count], index) => (
+                      <motion.div
+                        key={index}
+                        initial={{ opacity: 0, x: -20 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        transition={{ delay: 0.1 * index }}
+                      >
+                        <Box
+                          sx={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'space-between',
+                            p: 2,
+                            borderRadius: 2,
+                            background: 'rgba(255, 255, 255, 0.03)',
+                            border: '1px solid rgba(255, 255, 255, 0.08)',
+                          }}
+                        >
+                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                            <Box
+                              sx={{
+                                width: 28,
+                                height: 28,
+                                borderRadius: 1,
+                                background: 'linear-gradient(135deg, #8B5CF6 0%, #06B6D4 100%)',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                fontWeight: 700,
+                                fontSize: '0.875rem',
+                              }}
+                            >
+                              {index + 1}
+                            </Box>
+                            <Typography sx={{ fontWeight: 500 }}>
+                              {skill}
+                            </Typography>
+                          </Box>
+                          <Chip
+                            label={`${count} job${count > 1 ? 's' : ''}`}
+                            size="small"
+                            sx={{
+                              background: 'rgba(6, 182, 212, 0.2)',
+                              color: 'secondary.light',
+                            }}
+                          />
+                        </Box>
+                      </motion.div>
+                    ))}
+                  </Box>
+                )}
+              </CardContent>
+            </Card>
+          </motion.div>
+        </Grid>
+
+        <Grid size={{ xs: 12, md: 6 }}>
+          <motion.div variants={itemVariants}>
+            <Card sx={{ height: '100%' }}>
+              <CardContent sx={{ p: 4 }}>
+                <Typography variant="h6" sx={{ fontWeight: 600, mb: 3 }}>
+                  Achievements
+                </Typography>
+                <Grid container spacing={2}>
+                  {achievements.map((achievement, index) => (
+                    <Grid size={{ xs: 6 }} key={index}>
+                      <motion.div
+                        whileHover={{ scale: 1.03 }}
+                        transition={{ duration: 0.2 }}
+                      >
+                        <Box
+                          sx={{
+                            p: 2.5,
+                            borderRadius: 3,
+                            textAlign: 'center',
+                            background: achievement.unlocked
+                              ? `${achievement.color}15`
+                              : 'rgba(255, 255, 255, 0.02)',
+                            border: achievement.unlocked
+                              ? `1px solid ${achievement.color}40`
+                              : '1px solid rgba(255, 255, 255, 0.08)',
+                            opacity: achievement.unlocked ? 1 : 0.5,
+                            position: 'relative',
+                            overflow: 'hidden',
+                          }}
+                        >
+                          {!achievement.unlocked && (
+                            <Box
+                              sx={{
+                                position: 'absolute',
+                                top: 8,
+                                right: 8,
+                              }}
+                            >
+                              <LockIcon sx={{ fontSize: 16, color: 'text.secondary' }} />
+                            </Box>
+                          )}
+                          <Typography variant="h4" sx={{ mb: 1 }}>
+                            {achievement.icon}
+                          </Typography>
+                          <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 0.5 }}>
+                            {achievement.name}
+                          </Typography>
+                          <Typography variant="caption" sx={{ color: 'text.secondary' }}>
+                            {achievement.description}
+                          </Typography>
+                        </Box>
+                      </motion.div>
+                    </Grid>
+                  ))}
+                </Grid>
+              </CardContent>
+            </Card>
+          </motion.div>
+        </Grid>
+      </Grid>
+    </motion.div>
   );
 }
 

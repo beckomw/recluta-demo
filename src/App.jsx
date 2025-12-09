@@ -1,5 +1,12 @@
 import React, { useState } from 'react';
-import { Box, Container, AppBar, Toolbar, Typography, Button, Tabs, Tab } from '@mui/material';
+import { Box, Container, IconButton, Typography, Tooltip, Drawer, useMediaQuery, useTheme } from '@mui/material';
+import { motion, AnimatePresence } from 'framer-motion';
+import DescriptionIcon from '@mui/icons-material/Description';
+import WorkIcon from '@mui/icons-material/Work';
+import CompareArrowsIcon from '@mui/icons-material/CompareArrows';
+import DashboardIcon from '@mui/icons-material/Dashboard';
+import MenuIcon from '@mui/icons-material/Menu';
+import CloseIcon from '@mui/icons-material/Close';
 import Header from './components/Header';
 import HeroSection from './components/HeroSection';
 import ResumeView from './components/ResumeView';
@@ -8,39 +15,207 @@ import ComparisonView from './components/ComparisonView';
 import DashboardView from './components/DashboardView';
 import Footer from './components/Footer';
 
+const navItems = [
+  { id: 'resume', label: 'Resumes', icon: DescriptionIcon },
+  { id: 'jobs', label: 'Jobs', icon: WorkIcon },
+  { id: 'comparison', label: 'Compare', icon: CompareArrowsIcon },
+  { id: 'dashboard', label: 'Dashboard', icon: DashboardIcon },
+];
+
 function App() {
   const [currentView, setCurrentView] = useState('resume');
   const [showHero, setShowHero] = useState(true);
+  const [mobileOpen, setMobileOpen] = useState(false);
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('md'));
 
   const handleGetStarted = () => {
     setShowHero(false);
   };
 
-  const handleTabChange = (event, newValue) => {
-    setCurrentView(newValue);
-  };
+  const NavContent = () => (
+    <Box
+      sx={{
+        display: 'flex',
+        flexDirection: 'column',
+        gap: 1,
+        p: 2,
+      }}
+    >
+      {navItems.map((item) => {
+        const Icon = item.icon;
+        const isActive = currentView === item.id;
+        return (
+          <motion.div
+            key={item.id}
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.98 }}
+          >
+            <Box
+              onClick={() => {
+                setCurrentView(item.id);
+                setMobileOpen(false);
+              }}
+              sx={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 2,
+                p: 2,
+                borderRadius: 3,
+                cursor: 'pointer',
+                background: isActive
+                  ? 'linear-gradient(135deg, rgba(139, 92, 246, 0.3) 0%, rgba(6, 182, 212, 0.2) 100%)'
+                  : 'transparent',
+                border: isActive ? '1px solid rgba(139, 92, 246, 0.5)' : '1px solid transparent',
+                transition: 'all 0.3s ease',
+                '&:hover': {
+                  background: isActive
+                    ? 'linear-gradient(135deg, rgba(139, 92, 246, 0.4) 0%, rgba(6, 182, 212, 0.3) 100%)'
+                    : 'rgba(255, 255, 255, 0.05)',
+                },
+              }}
+            >
+              <Box
+                sx={{
+                  width: 40,
+                  height: 40,
+                  borderRadius: 2,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  background: isActive
+                    ? 'linear-gradient(135deg, #8B5CF6 0%, #06B6D4 100%)'
+                    : 'rgba(255, 255, 255, 0.1)',
+                  transition: 'all 0.3s ease',
+                }}
+              >
+                <Icon sx={{ color: 'white', fontSize: 20 }} />
+              </Box>
+              <Typography
+                sx={{
+                  fontWeight: isActive ? 600 : 500,
+                  color: isActive ? 'white' : 'rgba(255, 255, 255, 0.7)',
+                  transition: 'all 0.3s ease',
+                }}
+              >
+                {item.label}
+              </Typography>
+              {isActive && (
+                <motion.div
+                  layoutId="activeIndicator"
+                  style={{
+                    marginLeft: 'auto',
+                    width: 6,
+                    height: 6,
+                    borderRadius: '50%',
+                    background: 'linear-gradient(135deg, #8B5CF6, #06B6D4)',
+                  }}
+                />
+              )}
+            </Box>
+          </motion.div>
+        );
+      })}
+    </Box>
+  );
 
   return (
-    <Box sx={{ minHeight: '100vh', backgroundColor: '#f8f9fa' }}>
+    <Box sx={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
       <Header />
 
-      {showHero && <HeroSection onGetStarted={handleGetStarted} />}
+      <AnimatePresence mode="wait">
+        {showHero && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0, y: -50 }}
+            transition={{ duration: 0.5 }}
+          >
+            <HeroSection onGetStarted={handleGetStarted} />
+          </motion.div>
+        )}
+      </AnimatePresence>
 
-      <Container maxWidth="lg" sx={{ mt: 4, mb: 4 }}>
-        <Box sx={{ borderBottom: 1, borderColor: 'divider', mb: 3 }}>
-          <Tabs value={currentView} onChange={handleTabChange} centered>
-            <Tab label="Resume" value="resume" />
-            <Tab label="Jobs" value="jobs" />
-            <Tab label="Compare" value="comparison" />
-            <Tab label="Dashboard" value="dashboard" />
-          </Tabs>
+      <Box sx={{ flex: 1, display: 'flex' }}>
+        {!isMobile && (
+          <Box
+            sx={{
+              width: 280,
+              minHeight: 'calc(100vh - 80px)',
+              background: 'rgba(255, 255, 255, 0.02)',
+              borderRight: '1px solid rgba(255, 255, 255, 0.08)',
+              pt: 3,
+              position: 'sticky',
+              top: 80,
+              height: 'fit-content',
+            }}
+          >
+            <NavContent />
+          </Box>
+        )}
+
+        {isMobile && (
+          <>
+            <IconButton
+              onClick={() => setMobileOpen(true)}
+              sx={{
+                position: 'fixed',
+                bottom: 20,
+                right: 20,
+                width: 56,
+                height: 56,
+                background: 'linear-gradient(135deg, #8B5CF6 0%, #06B6D4 100%)',
+                zIndex: 1000,
+                boxShadow: '0 4px 20px rgba(139, 92, 246, 0.5)',
+                '&:hover': {
+                  background: 'linear-gradient(135deg, #7C3AED 0%, #0891B2 100%)',
+                },
+              }}
+            >
+              <MenuIcon />
+            </IconButton>
+            <Drawer
+              anchor="left"
+              open={mobileOpen}
+              onClose={() => setMobileOpen(false)}
+              PaperProps={{
+                sx: {
+                  width: 280,
+                  background: 'rgba(15, 15, 35, 0.98)',
+                  backdropFilter: 'blur(20px)',
+                  borderRight: '1px solid rgba(255, 255, 255, 0.1)',
+                },
+              }}
+            >
+              <Box sx={{ display: 'flex', justifyContent: 'flex-end', p: 2 }}>
+                <IconButton onClick={() => setMobileOpen(false)}>
+                  <CloseIcon />
+                </IconButton>
+              </Box>
+              <NavContent />
+            </Drawer>
+          </>
+        )}
+
+        <Box sx={{ flex: 1, p: { xs: 2, md: 4 } }}>
+          <Container maxWidth="xl">
+            <AnimatePresence mode="wait">
+              <motion.div
+                key={currentView}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -20 }}
+                transition={{ duration: 0.3 }}
+              >
+                {currentView === 'resume' && <ResumeView />}
+                {currentView === 'jobs' && <JobsView />}
+                {currentView === 'comparison' && <ComparisonView />}
+                {currentView === 'dashboard' && <DashboardView />}
+              </motion.div>
+            </AnimatePresence>
+          </Container>
         </Box>
-
-        {currentView === 'resume' && <ResumeView />}
-        {currentView === 'jobs' && <JobsView />}
-        {currentView === 'comparison' && <ComparisonView />}
-        {currentView === 'dashboard' && <DashboardView />}
-      </Container>
+      </Box>
 
       <Footer />
     </Box>
