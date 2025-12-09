@@ -6,6 +6,7 @@ import AccessTimeIcon from '@mui/icons-material/AccessTime';
 import TrendingUpIcon from '@mui/icons-material/TrendingUp';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import AutoGraphIcon from '@mui/icons-material/AutoGraph';
+import LockIcon from '@mui/icons-material/Lock';
 
 const containerVariants = {
   hidden: { opacity: 0 },
@@ -199,6 +200,19 @@ function HeroSection({ onGetStarted }) {
                   <Typography variant="body2" sx={{ color: 'text.secondary' }}>
                     No signup. No email. Just paste your skills and go.
                   </Typography>
+                  <Box
+                    sx={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 0.75,
+                      mt: 1,
+                    }}
+                  >
+                    <LockIcon sx={{ fontSize: 14, color: '#10B981' }} />
+                    <Typography variant="caption" sx={{ color: 'text.secondary' }}>
+                      100% private — your data never leaves your browser
+                    </Typography>
+                  </Box>
                 </Box>
               </motion.div>
             </Grid>
