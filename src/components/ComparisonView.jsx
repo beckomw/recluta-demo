@@ -19,6 +19,12 @@ import EmojiEventsIcon from '@mui/icons-material/EmojiEvents';
 import TrendingUpIcon from '@mui/icons-material/TrendingUp';
 import SchoolIcon from '@mui/icons-material/School';
 import InsightsIcon from '@mui/icons-material/Insights';
+import ThumbUpIcon from '@mui/icons-material/ThumbUp';
+import ThumbDownIcon from '@mui/icons-material/ThumbDown';
+import HelpOutlineIcon from '@mui/icons-material/HelpOutline';
+import RocketLaunchIcon from '@mui/icons-material/RocketLaunch';
+import PriorityHighIcon from '@mui/icons-material/PriorityHigh';
+import LocalFireDepartmentIcon from '@mui/icons-material/LocalFireDepartment';
 
 function ComparisonView() {
   const [resumes, setResumes] = useState([]);
@@ -83,28 +89,85 @@ function ComparisonView() {
       ? Math.round((matchingSkills.length / jobRequirements.length) * 100)
       : 0;
 
+    // Calculate skill demand from all jobs to prioritize missing skills
+    const allJobSkills = jobs.flatMap((job) =>
+      job.requirements.split(',').map((s) => s.trim().toLowerCase()).filter((s) => s.length > 0)
+    );
+    const skillDemand = allJobSkills.reduce((acc, skill) => {
+      acc[skill] = (acc[skill] || 0) + 1;
+      return acc;
+    }, {});
+
+    // Prioritize missing skills by how in-demand they are
+    const prioritizedMissingSkills = missingSkills
+      .map((skill) => ({
+        skill,
+        demand: skillDemand[skill] || 0,
+        isHot: (skillDemand[skill] || 0) >= 2, // Appears in 2+ jobs
+      }))
+      .sort((a, b) => b.demand - a.demand);
+
+    let verdict = '';
+    let verdictType = '';
     let message = '';
     let recommendation = '';
-    if (matchPercentage >= 80) {
-      message = 'Excellent Match!';
-      recommendation = 'You should definitely apply for this position. Your skills align very well with the requirements.';
-    } else if (matchPercentage >= 60) {
-      message = 'Good Match';
-      recommendation = 'Consider applying and highlighting your matching skills. Look into learning the missing skills to strengthen your profile.';
-    } else if (matchPercentage >= 40) {
-      message = 'Moderate Match';
-      recommendation = 'You may need to upskill before applying. Focus on the missing skills to improve your chances.';
+    let actionItems = [];
+
+    if (matchPercentage >= 70) {
+      verdict = 'YES, APPLY!';
+      verdictType = 'yes';
+      message = 'Strong Match';
+      recommendation = 'Your skills align well with this role. Apply with confidence!';
+      actionItems = [
+        'Tailor your resume to highlight matching skills',
+        'Prepare examples of your experience with these technologies',
+        missingSkills.length > 0 ? `Mention willingness to learn: ${missingSkills.slice(0, 2).join(', ')}` : null,
+      ].filter(Boolean);
+    } else if (matchPercentage >= 50) {
+      verdict = 'MAYBE';
+      verdictType = 'maybe';
+      message = 'Partial Match';
+      recommendation = 'You have a solid foundation. Worth applying if you can demonstrate quick learning.';
+      const topMissing = prioritizedMissingSkills.slice(0, 3).map(s => s.skill);
+      actionItems = [
+        'Highlight transferable skills and quick learning ability',
+        `Priority skills to learn: ${topMissing.join(', ')}`,
+        'Consider taking a quick online course on the missing skills',
+      ];
+    } else if (matchPercentage >= 30) {
+      verdict = 'STRETCH';
+      verdictType = 'stretch';
+      message = 'Gap Detected';
+      recommendation = 'This is a stretch role. Consider upskilling first or applying to gain interview experience.';
+      const topMissing = prioritizedMissingSkills.slice(0, 3).map(s => s.skill);
+      actionItems = [
+        `Focus on learning: ${topMissing.join(', ')}`,
+        'Build a small project using the required tech stack',
+        'Apply to similar but more junior roles while upskilling',
+      ];
     } else {
-      message = 'Needs Work';
-      recommendation = 'This role may require significant preparation. Consider building the required skills first.';
+      verdict = 'NOT YET';
+      verdictType = 'no';
+      message = 'Significant Gap';
+      recommendation = 'This role requires substantial upskilling. Use this as a learning roadmap.';
+      const topMissing = prioritizedMissingSkills.slice(0, 5).map(s => s.skill);
+      actionItems = [
+        `Learning path: ${topMissing.join(' → ')}`,
+        'Set a 3-6 month goal to build these skills',
+        'Save this job and revisit after upskilling',
+      ];
     }
 
     setAnalysis({
       matchPercentage,
+      verdict,
+      verdictType,
       message,
       recommendation,
       matchingSkills,
       missingSkills,
+      prioritizedMissingSkills,
+      actionItems,
     });
   };
 
@@ -326,53 +389,176 @@ function ComparisonView() {
             exit={{ opacity: 0, y: -20 }}
             transition={{ duration: 0.5 }}
           >
+            {/* THE VERDICT - Big, Bold, Clear */}
             <Card
               sx={{
                 mb: 4,
-                background: `linear-gradient(135deg, ${getScoreColor(analysis.matchPercentage)}15 0%, rgba(15, 15, 35, 0.95) 100%)`,
-                border: `1px solid ${getScoreColor(analysis.matchPercentage)}40`,
+                background: analysis.verdictType === 'yes'
+                  ? 'linear-gradient(135deg, rgba(16, 185, 129, 0.15) 0%, rgba(15, 15, 35, 0.95) 100%)'
+                  : analysis.verdictType === 'maybe'
+                  ? 'linear-gradient(135deg, rgba(139, 92, 246, 0.15) 0%, rgba(15, 15, 35, 0.95) 100%)'
+                  : analysis.verdictType === 'stretch'
+                  ? 'linear-gradient(135deg, rgba(245, 158, 11, 0.15) 0%, rgba(15, 15, 35, 0.95) 100%)'
+                  : 'linear-gradient(135deg, rgba(239, 68, 68, 0.15) 0%, rgba(15, 15, 35, 0.95) 100%)',
+                border: `2px solid ${getScoreColor(analysis.matchPercentage)}60`,
               }}
             >
-              <CardContent sx={{ p: 5, textAlign: 'center' }}>
-                <motion.div
-                  initial={{ scale: 0 }}
-                  animate={{ scale: 1 }}
-                  transition={{ type: 'spring', duration: 0.8 }}
-                >
-                  <Box
-                    sx={{
-                      width: 160,
-                      height: 160,
-                      borderRadius: '50%',
-                      background: `linear-gradient(135deg, ${getScoreColor(analysis.matchPercentage)}30 0%, ${getScoreColor(analysis.matchPercentage)}10 100%)`,
-                      border: `4px solid ${getScoreColor(analysis.matchPercentage)}`,
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      mx: 'auto',
-                      mb: 3,
-                      boxShadow: `0 0 40px ${getScoreColor(analysis.matchPercentage)}40`,
-                    }}
+              <CardContent sx={{ p: 5 }}>
+                <Box sx={{ display: 'flex', flexDirection: { xs: 'column', md: 'row' }, alignItems: 'center', gap: 4 }}>
+                  {/* Verdict Icon */}
+                  <motion.div
+                    initial={{ scale: 0, rotate: -180 }}
+                    animate={{ scale: 1, rotate: 0 }}
+                    transition={{ type: 'spring', duration: 0.8 }}
                   >
-                    <Typography
-                      variant="h1"
+                    <Box
                       sx={{
-                        fontWeight: 800,
-                        fontSize: '3.5rem',
-                        color: getScoreColor(analysis.matchPercentage),
+                        width: 120,
+                        height: 120,
+                        borderRadius: '50%',
+                        background: `linear-gradient(135deg, ${getScoreColor(analysis.matchPercentage)}40 0%, ${getScoreColor(analysis.matchPercentage)}20 100%)`,
+                        border: `4px solid ${getScoreColor(analysis.matchPercentage)}`,
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        boxShadow: `0 0 40px ${getScoreColor(analysis.matchPercentage)}40`,
                       }}
                     >
-                      {analysis.matchPercentage}%
-                    </Typography>
-                  </Box>
-                </motion.div>
+                      {analysis.verdictType === 'yes' && <ThumbUpIcon sx={{ fontSize: 56, color: '#10B981' }} />}
+                      {analysis.verdictType === 'maybe' && <HelpOutlineIcon sx={{ fontSize: 56, color: '#8B5CF6' }} />}
+                      {analysis.verdictType === 'stretch' && <TrendingUpIcon sx={{ fontSize: 56, color: '#F59E0B' }} />}
+                      {analysis.verdictType === 'no' && <SchoolIcon sx={{ fontSize: 56, color: '#EF4444' }} />}
+                    </Box>
+                  </motion.div>
 
-                <Typography variant="h4" sx={{ fontWeight: 700, mb: 1 }}>
-                  {analysis.message}
-                </Typography>
-                <Typography variant="body1" sx={{ color: 'text.secondary', maxWidth: 600, mx: 'auto' }}>
-                  {analysis.recommendation}
-                </Typography>
+                  {/* Verdict Text */}
+                  <Box sx={{ flex: 1, textAlign: { xs: 'center', md: 'left' } }}>
+                    <motion.div
+                      initial={{ opacity: 0, x: 20 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ delay: 0.3 }}
+                    >
+                      <Typography
+                        variant="h2"
+                        sx={{
+                          fontWeight: 900,
+                          fontSize: { xs: '2rem', md: '3rem' },
+                          color: getScoreColor(analysis.matchPercentage),
+                          mb: 1,
+                          letterSpacing: '-0.02em',
+                        }}
+                      >
+                        {analysis.verdict}
+                      </Typography>
+                      <Typography variant="h5" sx={{ fontWeight: 600, mb: 1, color: 'text.primary' }}>
+                        {analysis.message} — {analysis.matchPercentage}% Match
+                      </Typography>
+                      <Typography variant="body1" sx={{ color: 'text.secondary', maxWidth: 500 }}>
+                        {analysis.recommendation}
+                      </Typography>
+                    </motion.div>
+                  </Box>
+
+                  {/* Match Score Circle */}
+                  <motion.div
+                    initial={{ scale: 0 }}
+                    animate={{ scale: 1 }}
+                    transition={{ type: 'spring', delay: 0.2 }}
+                  >
+                    <Box
+                      sx={{
+                        width: 100,
+                        height: 100,
+                        borderRadius: '50%',
+                        background: `conic-gradient(${getScoreColor(analysis.matchPercentage)} ${analysis.matchPercentage * 3.6}deg, rgba(255,255,255,0.1) 0deg)`,
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        position: 'relative',
+                      }}
+                    >
+                      <Box
+                        sx={{
+                          width: 80,
+                          height: 80,
+                          borderRadius: '50%',
+                          background: 'rgba(15, 15, 35, 0.95)',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                        }}
+                      >
+                        <Typography
+                          variant="h4"
+                          sx={{
+                            fontWeight: 800,
+                            color: getScoreColor(analysis.matchPercentage),
+                          }}
+                        >
+                          {analysis.matchPercentage}%
+                        </Typography>
+                      </Box>
+                    </Box>
+                  </motion.div>
+                </Box>
+
+                {/* Action Items */}
+                {analysis.actionItems && analysis.actionItems.length > 0 && (
+                  <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.5 }}
+                  >
+                    <Box sx={{ mt: 4, pt: 3, borderTop: '1px solid rgba(255,255,255,0.1)' }}>
+                      <Typography variant="subtitle1" sx={{ fontWeight: 700, mb: 2, display: 'flex', alignItems: 'center', gap: 1 }}>
+                        <RocketLaunchIcon sx={{ color: 'primary.main' }} />
+                        Your Next Steps
+                      </Typography>
+                      <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
+                        {analysis.actionItems.map((item, index) => (
+                          <motion.div
+                            key={index}
+                            initial={{ opacity: 0, x: -20 }}
+                            animate={{ opacity: 1, x: 0 }}
+                            transition={{ delay: 0.6 + index * 0.1 }}
+                          >
+                            <Box
+                              sx={{
+                                display: 'flex',
+                                alignItems: 'flex-start',
+                                gap: 2,
+                                p: 2,
+                                borderRadius: 2,
+                                background: 'rgba(255,255,255,0.03)',
+                                border: '1px solid rgba(255,255,255,0.08)',
+                              }}
+                            >
+                              <Box
+                                sx={{
+                                  width: 24,
+                                  height: 24,
+                                  borderRadius: '50%',
+                                  background: 'linear-gradient(135deg, #8B5CF6 0%, #06B6D4 100%)',
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  justifyContent: 'center',
+                                  flexShrink: 0,
+                                  fontSize: '0.75rem',
+                                  fontWeight: 700,
+                                }}
+                              >
+                                {index + 1}
+                              </Box>
+                              <Typography variant="body2" sx={{ color: 'text.secondary' }}>
+                                {item}
+                              </Typography>
+                            </Box>
+                          </motion.div>
+                        ))}
+                      </Box>
+                    </Box>
+                  </motion.div>
+                )}
               </CardContent>
             </Card>
 
@@ -465,7 +651,7 @@ function ComparisonView() {
                             Skills to Learn
                           </Typography>
                           <Typography variant="body2" sx={{ color: 'text.secondary' }}>
-                            {analysis.missingSkills.length} skills needed
+                            {analysis.missingSkills.length} skills needed • sorted by demand
                           </Typography>
                         </Box>
                       </Box>
@@ -477,22 +663,59 @@ function ComparisonView() {
                           </Typography>
                         </Box>
                       ) : (
-                        <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
-                          {analysis.missingSkills.map((skill, index) => (
+                        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+                          {analysis.prioritizedMissingSkills.map((item, index) => (
                             <motion.div
                               key={index}
-                              initial={{ opacity: 0, scale: 0.8 }}
-                              animate={{ opacity: 1, scale: 1 }}
+                              initial={{ opacity: 0, x: -10 }}
+                              animate={{ opacity: 1, x: 0 }}
                               transition={{ delay: 0.4 + index * 0.05 }}
                             >
-                              <Chip
-                                label={skill}
+                              <Box
                                 sx={{
-                                  background: 'rgba(245, 158, 11, 0.2)',
-                                  borderColor: 'rgba(245, 158, 11, 0.4)',
-                                  color: 'warning.light',
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  justifyContent: 'space-between',
+                                  p: 1.5,
+                                  borderRadius: 2,
+                                  background: item.isHot
+                                    ? 'rgba(239, 68, 68, 0.1)'
+                                    : 'rgba(245, 158, 11, 0.1)',
+                                  border: item.isHot
+                                    ? '1px solid rgba(239, 68, 68, 0.3)'
+                                    : '1px solid rgba(245, 158, 11, 0.2)',
                                 }}
-                              />
+                              >
+                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                                  {item.isHot && (
+                                    <LocalFireDepartmentIcon sx={{ fontSize: 18, color: '#EF4444' }} />
+                                  )}
+                                  <Typography
+                                    variant="body2"
+                                    sx={{
+                                      fontWeight: item.isHot ? 600 : 400,
+                                      color: item.isHot ? '#EF4444' : 'warning.light',
+                                      textTransform: 'capitalize',
+                                    }}
+                                  >
+                                    {item.skill}
+                                  </Typography>
+                                </Box>
+                                {item.demand > 0 && (
+                                  <Chip
+                                    size="small"
+                                    label={item.isHot ? `${item.demand} jobs want this` : `${item.demand} job`}
+                                    sx={{
+                                      background: item.isHot
+                                        ? 'rgba(239, 68, 68, 0.2)'
+                                        : 'rgba(255,255,255,0.1)',
+                                      color: item.isHot ? '#EF4444' : 'text.secondary',
+                                      fontSize: '0.65rem',
+                                      height: 20,
+                                    }}
+                                  />
+                                )}
+                              </Box>
                             </motion.div>
                           ))}
                         </Box>
