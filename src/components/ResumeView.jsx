@@ -488,50 +488,44 @@ function ResumeView() {
         )}
       </AnimatePresence>
 
-      {/* PDF Upload - Secondary Option */}
+      {/* PDF Upload - Future Feature (de-emphasized) */}
       {resumes.length > 0 && !showForm && !showQuickStart && (
         <motion.div variants={cardVariants} initial="hidden" animate="visible">
-          <Card sx={{ mb: 4 }}>
-            <CardContent sx={{ p: 4 }}>
-              <input
-                accept=".pdf"
-                style={{ display: 'none' }}
-                id="resume-pdf-upload"
-                type="file"
-                onChange={handlePdfUpload}
-              />
-              <label htmlFor="resume-pdf-upload">
-                <Box
-                  sx={{
-                    p: 3,
-                    borderRadius: 3,
-                    border: '2px dashed rgba(139, 92, 246, 0.4)',
-                    background: 'rgba(139, 92, 246, 0.05)',
-                    textAlign: 'center',
-                    cursor: 'pointer',
-                    transition: 'all 0.3s ease',
-                    '&:hover': {
-                      borderColor: 'primary.main',
-                      background: 'rgba(139, 92, 246, 0.1)',
-                    },
-                  }}
-                >
-                  <CloudUploadIcon sx={{ fontSize: 40, color: 'primary.main', mb: 1 }} />
-                  <Typography variant="body1" sx={{ fontWeight: 600 }}>
-                    Upload PDF Resume
-                  </Typography>
-                  <Typography variant="body2" sx={{ color: 'text.secondary' }}>
-                    (Coming soon)
-                  </Typography>
-                </Box>
-              </label>
-              {pdfStatus && (
-                <Alert severity="info" sx={{ mt: 3, borderRadius: 2 }}>
-                  {pdfStatus}
-                </Alert>
-              )}
-            </CardContent>
-          </Card>
+          <Box sx={{ mb: 3, opacity: 0.6 }}>
+            <input
+              accept=".pdf"
+              style={{ display: 'none' }}
+              id="resume-pdf-upload"
+              type="file"
+              onChange={handlePdfUpload}
+            />
+            <label htmlFor="resume-pdf-upload">
+              <Box
+                sx={{
+                  p: 2,
+                  borderRadius: 2,
+                  border: '1px dashed rgba(255, 255, 255, 0.2)',
+                  background: 'rgba(255, 255, 255, 0.02)',
+                  textAlign: 'center',
+                  cursor: 'not-allowed',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: 1.5,
+                }}
+              >
+                <CloudUploadIcon sx={{ fontSize: 20, color: 'text.secondary' }} />
+                <Typography variant="body2" sx={{ color: 'text.secondary' }}>
+                  PDF upload coming soon
+                </Typography>
+              </Box>
+            </label>
+            {pdfStatus && (
+              <Alert severity="info" sx={{ mt: 2, borderRadius: 2 }}>
+                {pdfStatus}
+              </Alert>
+            )}
+          </Box>
         </motion.div>
       )}
 
@@ -796,9 +790,11 @@ function ResumeView() {
           <Typography variant="h5" sx={{ fontWeight: 600 }}>
             Saved Resumes
           </Typography>
-          <Typography variant="body2" sx={{ color: 'text.secondary' }}>
-            {resumes.length} resume{resumes.length !== 1 ? 's' : ''}
-          </Typography>
+          {resumes.length > 0 && (
+            <Typography variant="body2" sx={{ color: 'text.secondary' }}>
+              {resumes.length} resume{resumes.length !== 1 ? 's' : ''}
+            </Typography>
+          )}
         </Box>
 
         {resumes.length === 0 ? (

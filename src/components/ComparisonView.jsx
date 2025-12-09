@@ -26,7 +26,7 @@ import RocketLaunchIcon from '@mui/icons-material/RocketLaunch';
 import PriorityHighIcon from '@mui/icons-material/PriorityHigh';
 import LocalFireDepartmentIcon from '@mui/icons-material/LocalFireDepartment';
 
-function ComparisonView() {
+function ComparisonView({ onNavigate }) {
   const [resumes, setResumes] = useState([]);
   const [jobs, setJobs] = useState([]);
   const [selectedResume, setSelectedResume] = useState(null);
@@ -227,9 +227,24 @@ function ComparisonView() {
               {resumes.length === 0 ? (
                 <Box sx={{ textAlign: 'center', py: 4 }}>
                   <DescriptionIcon sx={{ fontSize: 48, color: 'rgba(255, 255, 255, 0.2)', mb: 2 }} />
-                  <Typography sx={{ color: 'text.secondary' }}>
-                    No resumes available. Create one first!
+                  <Typography sx={{ color: 'text.secondary', mb: 2 }}>
+                    No resumes available
                   </Typography>
+                  <Button
+                    variant="outlined"
+                    size="small"
+                    onClick={() => onNavigate?.('resume')}
+                    sx={{
+                      borderColor: 'rgba(139, 92, 246, 0.5)',
+                      color: 'primary.light',
+                      '&:hover': {
+                        borderColor: 'primary.main',
+                        background: 'rgba(139, 92, 246, 0.1)',
+                      },
+                    }}
+                  >
+                    Create Resume
+                  </Button>
                 </Box>
               ) : (
                 <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1, maxHeight: 280, overflowY: 'auto' }}>
@@ -312,9 +327,24 @@ function ComparisonView() {
               {jobs.length === 0 ? (
                 <Box sx={{ textAlign: 'center', py: 4 }}>
                   <WorkIcon sx={{ fontSize: 48, color: 'rgba(255, 255, 255, 0.2)', mb: 2 }} />
-                  <Typography sx={{ color: 'text.secondary' }}>
-                    No jobs available. Add one first!
+                  <Typography sx={{ color: 'text.secondary', mb: 2 }}>
+                    No jobs available
                   </Typography>
+                  <Button
+                    variant="outlined"
+                    size="small"
+                    onClick={() => onNavigate?.('jobs')}
+                    sx={{
+                      borderColor: 'rgba(6, 182, 212, 0.5)',
+                      color: 'secondary.light',
+                      '&:hover': {
+                        borderColor: 'secondary.main',
+                        background: 'rgba(6, 182, 212, 0.1)',
+                      },
+                    }}
+                  >
+                    Add Job
+                  </Button>
                 </Box>
               ) : (
                 <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1, maxHeight: 280, overflowY: 'auto' }}>
