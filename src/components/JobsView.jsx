@@ -581,7 +581,8 @@ function JobsView() {
           </CardContent>
         </Card>
       ) : (
-        <Grid container spacing={3}>
+        <>
+          <Grid container spacing={3}>
           {jobs.map((job, index) => {
             const bestMatch = getBestMatchForJob(job);
             const verdictInfo = bestMatch ? getVerdictInfo(bestMatch.score) : null;
@@ -922,6 +923,7 @@ function JobsView() {
             </motion.div>
           )}
         </AnimatePresence>
+        </>
       )}
     </Box>
   );
