@@ -15,6 +15,10 @@ import {
   DialogContent,
   DialogContentText,
   DialogActions,
+  FormControlLabel,
+  Switch,
+  Tooltip,
+  FormGroup,
 } from '@mui/material';
 import { motion, AnimatePresence } from 'framer-motion';
 import DeleteIcon from '@mui/icons-material/Delete';
@@ -33,6 +37,9 @@ import ThumbDownIcon from '@mui/icons-material/ThumbDown';
 import HelpOutlineIcon from '@mui/icons-material/HelpOutline';
 import TrendingUpIcon from '@mui/icons-material/TrendingUp';
 import AutoAwesomeIcon from '@mui/icons-material/AutoAwesome';
+import VerifiedUserIcon from '@mui/icons-material/VerifiedUser';
+import FilterListIcon from '@mui/icons-material/FilterList';
+import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
 
 function JobsView({ onNavigate }) {
   const [jobs, setJobs] = useState([]);
@@ -44,7 +51,11 @@ function JobsView({ onNavigate }) {
     url: '',
     description: '',
     requirements: '',
+    isFairChance: false,
+    fairChanceNotes: '',
   });
+  const [showFairChanceOnly, setShowFairChanceOnly] = useState(false);
+  const [sortFairChanceFirst, setSortFairChanceFirst] = useState(false);
   const [editId, setEditId] = useState(null);
   const [showForm, setShowForm] = useState(false);
   const [showAdvanced, setShowAdvanced] = useState(false);
@@ -82,6 +93,49 @@ function JobsView({ onNavigate }) {
     // Soft skills
     'leadership', 'communication', 'problem solving', 'teamwork', 'collaboration',
   ];
+
+  // Fair Chance employer industry keywords and known companies
+  const fairChanceIndicators = {
+    industries: [
+      'construction', 'trades', 'food service', 'hospitality', 'restaurant',
+      'warehousing', 'warehouse', 'logistics', 'manufacturing', 'assembly',
+      'landscaping', 'janitorial', 'cleaning', 'maintenance', 'moving',
+      'delivery', 'driver', 'transportation', 'retail', 'grocery',
+    ],
+    knownEmployers: [
+      "dave's killer bread", 'greyston bakery', 'slack', 'jpm', 'jpmorgan',
+      'jp morgan', 'target', 'walmart', 'home depot', 'koch industries',
+      'unilever', 'starbucks', 'whole foods', 'uber', 'lyft',
+    ],
+    keywords: [
+      'fair chance', 'second chance', 'ban the box', 'background friendly',
+      'felony friendly', 'reentry', 're-entry', 'justice impacted',
+      'formerly incarcerated', 'returning citizens',
+    ],
+  };
+
+  // Check if job/company might be a Fair Chance employer
+  const detectFairChanceHint = (job) => {
+    const searchText = `${job.title} ${job.company} ${job.description || ''}`.toLowerCase();
+
+    // Check for explicit Fair Chance keywords
+    const hasExplicitKeyword = fairChanceIndicators.keywords.some(kw => searchText.includes(kw));
+    if (hasExplicitKeyword) return { likely: true, reason: 'Explicit Fair Chance language detected' };
+
+    // Check for known Fair Chance employers
+    const isKnownEmployer = fairChanceIndicators.knownEmployers.some(emp =>
+      searchText.includes(emp.toLowerCase())
+    );
+    if (isKnownEmployer) return { likely: true, reason: 'Known Fair Chance employer' };
+
+    // Check for Fair Chance-friendly industries
+    const matchedIndustry = fairChanceIndicators.industries.find(ind =>
+      searchText.includes(ind.toLowerCase())
+    );
+    if (matchedIndustry) return { likely: true, reason: `${matchedIndustry.charAt(0).toUpperCase() + matchedIndustry.slice(1)} industry - often Fair Chance friendly` };
+
+    return { likely: false, reason: null };
+  };
 
   // Extract skills from job description
   const extractSkillsFromDescription = (description) => {
@@ -338,7 +392,30 @@ function JobsView({ onNavigate }) {
       url: '',
       description: '',
       requirements: '',
+      isFairChance: false,
+      fairChanceNotes: '',
     });
+  };
+
+  // Get filtered and sorted jobs
+  const getDisplayedJobs = () => {
+    let displayedJobs = [...jobs];
+
+    // Filter to show only Fair Chance jobs if enabled
+    if (showFairChanceOnly) {
+      displayedJobs = displayedJobs.filter(job => job.isFairChance);
+    }
+
+    // Sort Fair Chance jobs first if enabled
+    if (sortFairChanceFirst) {
+      displayedJobs.sort((a, b) => {
+        if (a.isFairChance && !b.isFairChance) return -1;
+        if (!a.isFairChance && b.isFairChance) return 1;
+        return 0;
+      });
+    }
+
+    return displayedJobs;
   };
 
   const handleDeleteClick = (job) => {
@@ -512,6 +589,114 @@ function JobsView({ onNavigate }) {
                         </Box>
                       )}
                     </Grid>
+
+                    {/* Fair Chance Employer Toggle */}
+                    <Grid size={{ xs: 12 }}>
+                      <Box
+                        sx={{
+                          p: 2,
+                          borderRadius: 2,
+                          background: currentJob.isFairChance
+                            ? 'linear-gradient(135deg, rgba(16, 185, 129, 0.15) 0%, rgba(16, 185, 129, 0.05) 100%)'
+                            : 'rgba(255, 255, 255, 0.03)',
+                          border: currentJob.isFairChance
+                            ? '1px solid rgba(16, 185, 129, 0.3)'
+                            : '1px solid rgba(255, 255, 255, 0.08)',
+                          transition: 'all 0.3s ease',
+                        }}
+                      >
+                        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                            <VerifiedUserIcon
+                              sx={{
+                                color: currentJob.isFairChance ? '#10B981' : 'text.secondary',
+                                fontSize: 24,
+                              }}
+                            />
+                            <Box>
+                              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>
+                                  Fair Chance Employer
+                                </Typography>
+                                <Tooltip
+                                  title="Fair Chance employers consider candidates with criminal records. They may have 'Ban the Box' policies, second-chance hiring programs, or other inclusive practices."
+                                  arrow
+                                  placement="top"
+                                >
+                                  <InfoOutlinedIcon sx={{ fontSize: 16, color: 'text.secondary', cursor: 'help' }} />
+                                </Tooltip>
+                              </Box>
+                              <Typography variant="caption" sx={{ color: 'text.secondary' }}>
+                                Mark this job as background-friendly
+                              </Typography>
+                            </Box>
+                          </Box>
+                          <Switch
+                            checked={currentJob.isFairChance}
+                            onChange={(e) => setCurrentJob({ ...currentJob, isFairChance: e.target.checked })}
+                            sx={{
+                              '& .MuiSwitch-switchBase.Mui-checked': {
+                                color: '#10B981',
+                              },
+                              '& .MuiSwitch-switchBase.Mui-checked + .MuiSwitch-track': {
+                                backgroundColor: '#10B981',
+                              },
+                            }}
+                          />
+                        </Box>
+
+                        {/* Fair Chance Hint Detection */}
+                        {!currentJob.isFairChance && (currentJob.title || currentJob.company || currentJob.description) && (() => {
+                          const hint = detectFairChanceHint(currentJob);
+                          if (hint.likely) {
+                            return (
+                              <Box
+                                sx={{
+                                  mt: 2,
+                                  p: 1.5,
+                                  borderRadius: 1,
+                                  background: 'rgba(139, 92, 246, 0.1)',
+                                  border: '1px solid rgba(139, 92, 246, 0.2)',
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  gap: 1.5,
+                                }}
+                              >
+                                <AutoAwesomeIcon sx={{ color: 'primary.light', fontSize: 18 }} />
+                                <Box sx={{ flex: 1 }}>
+                                  <Typography variant="caption" sx={{ color: 'primary.light', fontWeight: 600 }}>
+                                    This might be a Fair Chance employer!
+                                  </Typography>
+                                  <Typography variant="caption" sx={{ color: 'text.secondary', display: 'block' }}>
+                                    {hint.reason}
+                                  </Typography>
+                                </Box>
+                                <Button
+                                  size="small"
+                                  onClick={() => setCurrentJob({ ...currentJob, isFairChance: true })}
+                                  sx={{ fontSize: '0.7rem', minWidth: 'auto' }}
+                                >
+                                  Mark as Fair Chance
+                                </Button>
+                              </Box>
+                            );
+                          }
+                          return null;
+                        })()}
+
+                        {/* Fair Chance Notes (shown when enabled) */}
+                        {currentJob.isFairChance && (
+                          <TextField
+                            fullWidth
+                            size="small"
+                            placeholder="Optional: Add notes (e.g., 'Ban the Box policy', 'Second Chance program')"
+                            value={currentJob.fairChanceNotes}
+                            onChange={(e) => setCurrentJob({ ...currentJob, fairChanceNotes: e.target.value })}
+                            sx={{ mt: 2 }}
+                          />
+                        )}
+                      </Box>
+                    </Grid>
                   </Grid>
 
                   {/* Expandable Advanced Section */}
@@ -643,13 +828,70 @@ function JobsView({ onNavigate }) {
         )}
       </AnimatePresence>
 
-      <Box sx={{ mb: 2, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-        <Typography variant="h5" sx={{ fontWeight: 600 }}>
-          Saved Jobs
-        </Typography>
-        <Typography variant="body2" sx={{ color: 'text.secondary' }}>
-          {jobs.length} job{jobs.length !== 1 ? 's' : ''}
-        </Typography>
+      <Box sx={{ mb: 2 }}>
+        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
+          <Typography variant="h5" sx={{ fontWeight: 600 }}>
+            Saved Jobs
+          </Typography>
+          <Typography variant="body2" sx={{ color: 'text.secondary' }}>
+            {showFairChanceOnly
+              ? `${getDisplayedJobs().length} of ${jobs.length} job${jobs.length !== 1 ? 's' : ''}`
+              : `${jobs.length} job${jobs.length !== 1 ? 's' : ''}`}
+          </Typography>
+        </Box>
+
+        {/* Fair Chance Filter/Sort Controls */}
+        {jobs.length > 0 && jobs.some(job => job.isFairChance) && (
+          <Box
+            sx={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 2,
+              flexWrap: 'wrap',
+              p: 2,
+              borderRadius: 2,
+              background: 'linear-gradient(135deg, rgba(16, 185, 129, 0.08) 0%, rgba(6, 182, 212, 0.08) 100%)',
+              border: '1px solid rgba(16, 185, 129, 0.2)',
+            }}
+          >
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+              <VerifiedUserIcon sx={{ color: '#10B981', fontSize: 20 }} />
+              <Typography variant="subtitle2" sx={{ color: '#10B981', fontWeight: 600 }}>
+                Fair Chance Jobs
+              </Typography>
+            </Box>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, flexWrap: 'wrap' }}>
+              <FormControlLabel
+                control={
+                  <Switch
+                    size="small"
+                    checked={showFairChanceOnly}
+                    onChange={(e) => setShowFairChanceOnly(e.target.checked)}
+                    sx={{
+                      '& .MuiSwitch-switchBase.Mui-checked': { color: '#10B981' },
+                      '& .MuiSwitch-switchBase.Mui-checked + .MuiSwitch-track': { backgroundColor: '#10B981' },
+                    }}
+                  />
+                }
+                label={<Typography variant="body2" sx={{ color: 'text.secondary' }}>Show only Fair Chance</Typography>}
+              />
+              <FormControlLabel
+                control={
+                  <Switch
+                    size="small"
+                    checked={sortFairChanceFirst}
+                    onChange={(e) => setSortFairChanceFirst(e.target.checked)}
+                    sx={{
+                      '& .MuiSwitch-switchBase.Mui-checked': { color: '#06B6D4' },
+                      '& .MuiSwitch-switchBase.Mui-checked + .MuiSwitch-track': { backgroundColor: '#06B6D4' },
+                    }}
+                  />
+                }
+                label={<Typography variant="body2" sx={{ color: 'text.secondary' }}>Show Fair Chance first</Typography>}
+              />
+            </Box>
+          </Box>
+        )}
       </Box>
 
       {jobs.length === 0 ? (
@@ -677,7 +919,7 @@ function JobsView({ onNavigate }) {
       ) : (
         <>
           <Grid container spacing={3}>
-          {jobs.map((job, index) => {
+          {getDisplayedJobs().map((job, index) => {
             const bestMatch = getBestMatchForJob(job);
             const verdictInfo = bestMatch ? getVerdictInfo(bestMatch.score) : null;
             const VerdictIcon = verdictInfo?.icon;
@@ -763,7 +1005,46 @@ function JobsView({ onNavigate }) {
                       </Box>
                     )}
 
-                    <CardContent sx={{ p: 3, pt: bestMatch || resumes.length === 0 ? 4 : 3 }}>
+                    {/* Fair Chance Employer Badge */}
+                    {job.isFairChance && (
+                      <Tooltip
+                        title={job.fairChanceNotes || "This employer has Fair Chance hiring practices"}
+                        arrow
+                        placement="top"
+                      >
+                        <Box
+                          sx={{
+                            position: 'absolute',
+                            top: -12,
+                            left: 16,
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: 0.5,
+                            px: 1.5,
+                            py: 0.5,
+                            borderRadius: 2,
+                            background: 'linear-gradient(135deg, rgba(16, 185, 129, 0.3) 0%, rgba(16, 185, 129, 0.15) 100%)',
+                            border: '2px solid #10B981',
+                            boxShadow: '0 4px 12px rgba(16, 185, 129, 0.4)',
+                            cursor: 'help',
+                          }}
+                        >
+                          <VerifiedUserIcon sx={{ fontSize: 14, color: '#10B981' }} />
+                          <Typography
+                            variant="caption"
+                            sx={{
+                              fontWeight: 700,
+                              color: '#10B981',
+                              fontSize: '0.7rem',
+                            }}
+                          >
+                            Fair Chance
+                          </Typography>
+                        </Box>
+                      </Tooltip>
+                    )}
+
+                    <CardContent sx={{ p: 3, pt: bestMatch || resumes.length === 0 || job.isFairChance ? 4 : 3 }}>
                       <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 2 }}>
                         <Box
                           sx={{
