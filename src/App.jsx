@@ -191,7 +191,7 @@ function App() {
               >
                 {currentView === 'resume' && <ResumeView />}
                 {currentView === 'jobs' && <JobsView onNavigate={setCurrentView} />}
-                {currentView === 'comparison' && <ComparisonView />}
+                {currentView === 'comparison' && <ComparisonView onNavigate={setCurrentView} />}
               </motion.div>
             </AnimatePresence>
           </Container>
