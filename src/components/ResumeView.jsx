@@ -24,6 +24,8 @@ import AddIcon from '@mui/icons-material/Add';
 import SaveIcon from '@mui/icons-material/Save';
 import ContentCopyIcon from '@mui/icons-material/ContentCopy';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
+import BoltIcon from '@mui/icons-material/Bolt';
+import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 
 const cardVariants = {
   hidden: { opacity: 0, y: 20 },
@@ -45,9 +47,47 @@ function ResumeView() {
   const [pdfStatus, setPdfStatus] = useState('');
   const [editId, setEditId] = useState(null);
   const [showForm, setShowForm] = useState(false);
+  const [showQuickStart, setShowQuickStart] = useState(false);
+  const [quickStartSkills, setQuickStartSkills] = useState('');
   const [showAdvanced, setShowAdvanced] = useState(false);
   const [errors, setErrors] = useState({});
   const firstFieldRef = useRef(null);
+  const quickStartRef = useRef(null);
+
+  // Quick Start - just skills, minimal friction
+  const handleQuickStart = () => {
+    if (!quickStartSkills.trim()) {
+      return;
+    }
+
+    const skillsList = quickStartSkills.split(',').filter(s => s.trim()).length;
+    if (skillsList < 2) {
+      return;
+    }
+
+    const quickResume = {
+      id: Date.now(),
+      firstName: 'Quick',
+      lastName: 'Profile',
+      email: 'update@later.com',
+      zipcode: '00000',
+      title: 'My Skills Profile',
+      summary: '',
+      skills: quickStartSkills,
+      experience: '',
+    };
+
+    saveResumes([...resumes, quickResume]);
+    setQuickStartSkills('');
+    setShowQuickStart(false);
+  };
+
+  // Auto-focus quick start input
+  useEffect(() => {
+    if (showQuickStart && quickStartRef.current) {
+      setTimeout(() => quickStartRef.current.focus(), 100);
+    }
+  }, [showQuickStart]);
 
   useEffect(() => {
     loadResumes();
@@ -183,84 +223,253 @@ function ResumeView() {
         </Box>
       </motion.div>
 
-      <motion.div variants={cardVariants} initial="hidden" animate="visible">
-        <Card sx={{ mb: 4 }}>
-          <CardContent sx={{ p: 4 }}>
-            <input
-              accept=".pdf"
-              style={{ display: 'none' }}
-              id="resume-pdf-upload"
-              type="file"
-              onChange={handlePdfUpload}
-            />
-            <label htmlFor="resume-pdf-upload">
-              <Box
-                sx={{
-                  p: 5,
-                  borderRadius: 3,
-                  border: '2px dashed rgba(139, 92, 246, 0.4)',
-                  background: 'rgba(139, 92, 246, 0.05)',
-                  textAlign: 'center',
-                  cursor: 'pointer',
-                  transition: 'all 0.3s ease',
-                  '&:hover': {
-                    borderColor: 'primary.main',
-                    background: 'rgba(139, 92, 246, 0.1)',
-                    transform: 'translateY(-2px)',
-                  },
-                }}
-              >
+      {/* QUICK START - The "Excalidraw" Experience */}
+      {resumes.length === 0 && !showForm && !showQuickStart && (
+        <motion.div variants={cardVariants} initial="hidden" animate="visible">
+          <Card
+            sx={{
+              mb: 4,
+              background: 'linear-gradient(135deg, rgba(16, 185, 129, 0.1) 0%, rgba(15, 15, 35, 0.95) 100%)',
+              border: '2px solid rgba(16, 185, 129, 0.3)',
+            }}
+          >
+            <CardContent sx={{ p: 4 }}>
+              <Box sx={{ textAlign: 'center' }}>
                 <motion.div
-                  animate={{ y: [0, -10, 0] }}
-                  transition={{ duration: 2, repeat: Infinity }}
+                  initial={{ scale: 0 }}
+                  animate={{ scale: 1 }}
+                  transition={{ type: 'spring', duration: 0.5 }}
                 >
-                  <CloudUploadIcon sx={{ fontSize: 56, color: 'primary.main', mb: 2 }} />
+                  <Box
+                    sx={{
+                      width: 80,
+                      height: 80,
+                      borderRadius: '50%',
+                      background: 'linear-gradient(135deg, #10B981 0%, #06B6D4 100%)',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      mx: 'auto',
+                      mb: 3,
+                      boxShadow: '0 8px 32px rgba(16, 185, 129, 0.3)',
+                    }}
+                  >
+                    <BoltIcon sx={{ fontSize: 40, color: 'white' }} />
+                  </Box>
                 </motion.div>
-                <Typography variant="h6" sx={{ fontWeight: 600, mb: 1 }}>
-                  Drop your resume here or click to upload
+                <Typography variant="h5" sx={{ fontWeight: 700, mb: 1 }}>
+                  Quick Start - Get Value in 30 Seconds
                 </Typography>
-                <Typography variant="body2" sx={{ color: 'text.secondary' }}>
-                  Supports PDF files. We'll extract your details automatically.
+                <Typography variant="body1" sx={{ color: 'text.secondary', mb: 3, maxWidth: 500, mx: 'auto' }}>
+                  Just enter your skills and start matching with jobs immediately. No signup, no forms - just results.
                 </Typography>
+                <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
+                  <Button
+                    variant="contained"
+                    size="large"
+                    startIcon={<BoltIcon />}
+                    onClick={() => setShowQuickStart(true)}
+                    sx={{
+                      px: 4,
+                      py: 1.5,
+                      background: 'linear-gradient(135deg, #10B981 0%, #06B6D4 100%)',
+                      '&:hover': {
+                        background: 'linear-gradient(135deg, #059669 0%, #0891B2 100%)',
+                      },
+                    }}
+                  >
+                    Start Now - Just Skills
+                  </Button>
+                </motion.div>
               </Box>
-            </label>
-            {pdfStatus && (
-              <Alert severity="info" sx={{ mt: 3, borderRadius: 2 }}>
-                {pdfStatus}
-              </Alert>
-            )}
-          </CardContent>
-        </Card>
-      </motion.div>
-
-      <Box sx={{ display: 'flex', justifyContent: 'center', mb: 4 }}>
-        <Divider sx={{ flex: 1, alignSelf: 'center' }} />
-        <Typography variant="body2" sx={{ px: 3, color: 'text.secondary' }}>
-          OR
-        </Typography>
-        <Divider sx={{ flex: 1, alignSelf: 'center' }} />
-      </Box>
-
-      {!showForm && (
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ duration: 0.3 }}
-        >
-          <Box sx={{ display: 'flex', justifyContent: 'center', mb: 4 }}>
-            <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
-              <Button
-                variant="contained"
-                size="large"
-                startIcon={<AddIcon />}
-                onClick={() => setShowForm(true)}
-                sx={{ px: 4, py: 1.5 }}
-              >
-                Create Resume Manually
-              </Button>
-            </motion.div>
-          </Box>
+            </CardContent>
+          </Card>
         </motion.div>
+      )}
+
+      {/* Quick Start Form */}
+      <AnimatePresence>
+        {showQuickStart && (
+          <motion.div
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -20 }}
+            transition={{ duration: 0.3 }}
+          >
+            <Card
+              sx={{
+                mb: 4,
+                background: 'linear-gradient(135deg, rgba(16, 185, 129, 0.1) 0%, rgba(15, 15, 35, 0.95) 100%)',
+                border: '2px solid rgba(16, 185, 129, 0.4)',
+              }}
+            >
+              <CardContent sx={{ p: 4 }}>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 3 }}>
+                  <Box
+                    sx={{
+                      width: 48,
+                      height: 48,
+                      borderRadius: 2,
+                      background: 'linear-gradient(135deg, #10B981 0%, #06B6D4 100%)',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                    }}
+                  >
+                    <BoltIcon sx={{ color: 'white' }} />
+                  </Box>
+                  <Box>
+                    <Typography variant="h6" sx={{ fontWeight: 700 }}>
+                      Quick Start
+                    </Typography>
+                    <Typography variant="body2" sx={{ color: 'text.secondary' }}>
+                      Enter your skills to get instant job matching
+                    </Typography>
+                  </Box>
+                </Box>
+
+                <TextField
+                  fullWidth
+                  multiline
+                  rows={3}
+                  inputRef={quickStartRef}
+                  label="Your Skills"
+                  placeholder="React, JavaScript, TypeScript, Node.js, Python, SQL, AWS..."
+                  value={quickStartSkills}
+                  onChange={(e) => setQuickStartSkills(e.target.value)}
+                  helperText="Separate skills with commas. Add at least 2 skills."
+                  sx={{ mb: 3 }}
+                />
+
+                {quickStartSkills.split(',').filter(s => s.trim()).length >= 2 && (
+                  <motion.div
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                  >
+                    <Box sx={{ mb: 3, p: 2, borderRadius: 2, background: 'rgba(16, 185, 129, 0.1)' }}>
+                      <Typography variant="body2" sx={{ color: 'success.light', display: 'flex', alignItems: 'center', gap: 1 }}>
+                        <CheckCircleIcon sx={{ fontSize: 18 }} />
+                        {quickStartSkills.split(',').filter(s => s.trim()).length} skills detected - Ready to go!
+                      </Typography>
+                    </Box>
+                  </motion.div>
+                )}
+
+                <Box sx={{ display: 'flex', gap: 2 }}>
+                  <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} style={{ flex: 1 }}>
+                    <Button
+                      fullWidth
+                      variant="contained"
+                      size="large"
+                      startIcon={<BoltIcon />}
+                      onClick={handleQuickStart}
+                      disabled={quickStartSkills.split(',').filter(s => s.trim()).length < 2}
+                      sx={{
+                        py: 1.5,
+                        background: 'linear-gradient(135deg, #10B981 0%, #06B6D4 100%)',
+                        '&:hover': {
+                          background: 'linear-gradient(135deg, #059669 0%, #0891B2 100%)',
+                        },
+                        '&:disabled': {
+                          background: 'rgba(255,255,255,0.1)',
+                        },
+                      }}
+                    >
+                      Create & Start Matching
+                    </Button>
+                  </motion.div>
+                  <Button
+                    variant="outlined"
+                    size="large"
+                    onClick={() => {
+                      setShowQuickStart(false);
+                      setQuickStartSkills('');
+                    }}
+                    sx={{
+                      borderColor: 'rgba(255, 255, 255, 0.2)',
+                      color: 'text.secondary',
+                    }}
+                  >
+                    Cancel
+                  </Button>
+                </Box>
+
+                <Typography variant="body2" sx={{ color: 'text.secondary', mt: 2, textAlign: 'center' }}>
+                  You can add more details later. This gets you started instantly.
+                </Typography>
+              </CardContent>
+            </Card>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* PDF Upload - Secondary Option */}
+      {resumes.length > 0 && !showForm && !showQuickStart && (
+        <motion.div variants={cardVariants} initial="hidden" animate="visible">
+          <Card sx={{ mb: 4 }}>
+            <CardContent sx={{ p: 4 }}>
+              <input
+                accept=".pdf"
+                style={{ display: 'none' }}
+                id="resume-pdf-upload"
+                type="file"
+                onChange={handlePdfUpload}
+              />
+              <label htmlFor="resume-pdf-upload">
+                <Box
+                  sx={{
+                    p: 3,
+                    borderRadius: 3,
+                    border: '2px dashed rgba(139, 92, 246, 0.4)',
+                    background: 'rgba(139, 92, 246, 0.05)',
+                    textAlign: 'center',
+                    cursor: 'pointer',
+                    transition: 'all 0.3s ease',
+                    '&:hover': {
+                      borderColor: 'primary.main',
+                      background: 'rgba(139, 92, 246, 0.1)',
+                    },
+                  }}
+                >
+                  <CloudUploadIcon sx={{ fontSize: 40, color: 'primary.main', mb: 1 }} />
+                  <Typography variant="body1" sx={{ fontWeight: 600 }}>
+                    Upload PDF Resume
+                  </Typography>
+                  <Typography variant="body2" sx={{ color: 'text.secondary' }}>
+                    (Coming soon)
+                  </Typography>
+                </Box>
+              </label>
+              {pdfStatus && (
+                <Alert severity="info" sx={{ mt: 3, borderRadius: 2 }}>
+                  {pdfStatus}
+                </Alert>
+              )}
+            </CardContent>
+          </Card>
+        </motion.div>
+      )}
+
+      {/* Create Resume Buttons */}
+      {!showForm && !showQuickStart && (
+        <Box sx={{ display: 'flex', justifyContent: 'center', gap: 2, mb: 4, flexWrap: 'wrap' }}>
+          {resumes.length === 0 && (
+            <Typography variant="body2" sx={{ color: 'text.secondary', width: '100%', textAlign: 'center', mb: 2 }}>
+              Or create a detailed resume
+            </Typography>
+          )}
+          <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
+            <Button
+              variant={resumes.length === 0 ? "outlined" : "contained"}
+              size="large"
+              startIcon={<AddIcon />}
+              onClick={() => setShowForm(true)}
+              sx={{ px: 4, py: 1.5 }}
+            >
+              {resumes.length === 0 ? 'Create Detailed Resume' : 'Add New Resume'}
+            </Button>
+          </motion.div>
+        </Box>
       )}
 
       <AnimatePresence>
