@@ -259,6 +259,56 @@ function JobsView({ onNavigate }) {
     return Object.keys(newErrors).length === 0;
   };
 
+  // Validate a single field on blur
+  const validateField = (fieldName) => {
+    const newErrors = { ...errors };
+
+    switch (fieldName) {
+      case 'title':
+        if (!currentJob.title.trim()) {
+          newErrors.title = 'Job title is required';
+        } else {
+          delete newErrors.title;
+        }
+        break;
+      case 'company':
+        if (!currentJob.company.trim()) {
+          newErrors.company = 'Company name is required';
+        } else {
+          delete newErrors.company;
+        }
+        break;
+      case 'requirements':
+        if (!currentJob.requirements.trim()) {
+          newErrors.requirements = 'Required skills are needed for matching';
+        } else if (currentJob.requirements.split(',').filter(s => s.trim()).length < 2) {
+          newErrors.requirements = 'Please enter at least 2 skills separated by commas';
+        } else {
+          delete newErrors.requirements;
+        }
+        break;
+      default:
+        break;
+    }
+
+    setErrors(newErrors);
+  };
+
+  // Parse skills into array for chip display
+  const getSkillsArray = (skillsString) => {
+    return skillsString
+      .split(',')
+      .map(s => s.trim())
+      .filter(s => s.length > 0);
+  };
+
+  // Remove a skill from the list
+  const removeSkill = (skillToRemove) => {
+    const skills = getSkillsArray(currentJob.requirements);
+    const newSkills = skills.filter(s => s !== skillToRemove);
+    setCurrentJob({ ...currentJob, requirements: newSkills.join(', ') });
+  };
+
   const handleSubmit = (e) => {
     e.preventDefault();
 
@@ -399,6 +449,7 @@ function JobsView({ onNavigate }) {
                           setCurrentJob({ ...currentJob, title: e.target.value });
                           if (errors.title) setErrors({ ...errors, title: '' });
                         }}
+                        onBlur={() => validateField('title')}
                         error={!!errors.title}
                         helperText={errors.title}
                       />
@@ -414,6 +465,7 @@ function JobsView({ onNavigate }) {
                           setCurrentJob({ ...currentJob, company: e.target.value });
                           if (errors.company) setErrors({ ...errors, company: '' });
                         }}
+                        onBlur={() => validateField('company')}
                         error={!!errors.company}
                         helperText={errors.company}
                       />
@@ -422,7 +474,7 @@ function JobsView({ onNavigate }) {
                       <TextField
                         fullWidth
                         multiline
-                        rows={3}
+                        rows={2}
                         label="Required Skills"
                         required
                         placeholder="React, TypeScript, Node.js, AWS, 3+ years experience..."
@@ -431,9 +483,34 @@ function JobsView({ onNavigate }) {
                           setCurrentJob({ ...currentJob, requirements: e.target.value });
                           if (errors.requirements) setErrors({ ...errors, requirements: '' });
                         }}
+                        onBlur={() => validateField('requirements')}
                         error={!!errors.requirements}
                         helperText={errors.requirements || "Separate skills with commas - this is used for matching against your resume"}
                       />
+                      {/* Skills Chips Display */}
+                      {getSkillsArray(currentJob.requirements).length > 0 && (
+                        <Box sx={{ mt: 1.5, display: 'flex', flexWrap: 'wrap', gap: 0.75 }}>
+                          {getSkillsArray(currentJob.requirements).map((skill, index) => (
+                            <Chip
+                              key={index}
+                              label={skill}
+                              size="small"
+                              onDelete={() => removeSkill(skill)}
+                              sx={{
+                                background: 'rgba(6, 182, 212, 0.15)',
+                                borderColor: 'rgba(6, 182, 212, 0.3)',
+                                color: 'secondary.light',
+                                '& .MuiChip-deleteIcon': {
+                                  color: 'rgba(6, 182, 212, 0.6)',
+                                  '&:hover': {
+                                    color: 'rgba(6, 182, 212, 1)',
+                                  },
+                                },
+                              }}
+                            />
+                          ))}
+                        </Box>
+                      )}
                     </Grid>
                   </Grid>
 

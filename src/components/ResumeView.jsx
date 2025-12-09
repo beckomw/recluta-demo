@@ -16,6 +16,7 @@ import {
   DialogContent,
   DialogContentText,
   DialogActions,
+  Chip,
 } from '@mui/material';
 import { motion, AnimatePresence } from 'framer-motion';
 import CloudUploadIcon from '@mui/icons-material/CloudUpload';
@@ -73,14 +74,15 @@ function ResumeView() {
 
     const quickResume = {
       id: Date.now(),
-      firstName: 'Quick',
-      lastName: 'Profile',
-      email: 'update@later.com',
-      zipcode: '00000',
-      title: 'My Skills Profile',
+      firstName: '',
+      lastName: '',
+      email: '',
+      zipcode: '',
+      title: 'Skills Profile',
       summary: '',
       skills: quickStartSkills,
       experience: '',
+      isQuickProfile: true, // Flag to identify quick profiles
     };
 
     saveResumes([...resumes, quickResume]);
@@ -143,6 +145,72 @@ function ResumeView() {
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
+  };
+
+  // Validate a single field on blur
+  const validateField = (fieldName) => {
+    const newErrors = { ...errors };
+
+    switch (fieldName) {
+      case 'firstName':
+        if (!currentResume.firstName.trim()) {
+          newErrors.firstName = 'First name is required';
+        } else {
+          delete newErrors.firstName;
+        }
+        break;
+      case 'lastName':
+        if (!currentResume.lastName.trim()) {
+          newErrors.lastName = 'Last name is required';
+        } else {
+          delete newErrors.lastName;
+        }
+        break;
+      case 'email':
+        if (!currentResume.email.trim()) {
+          newErrors.email = 'Email is required';
+        } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(currentResume.email)) {
+          newErrors.email = 'Please enter a valid email address';
+        } else {
+          delete newErrors.email;
+        }
+        break;
+      case 'zipcode':
+        if (!currentResume.zipcode.trim()) {
+          newErrors.zipcode = 'Zipcode is required';
+        } else {
+          delete newErrors.zipcode;
+        }
+        break;
+      case 'skills':
+        if (!currentResume.skills.trim()) {
+          newErrors.skills = 'Skills are required for job matching';
+        } else if (currentResume.skills.split(',').filter(s => s.trim()).length < 2) {
+          newErrors.skills = 'Please enter at least 2 skills separated by commas';
+        } else {
+          delete newErrors.skills;
+        }
+        break;
+      default:
+        break;
+    }
+
+    setErrors(newErrors);
+  };
+
+  // Parse skills into array for chip display
+  const getSkillsArray = (skillsString) => {
+    return skillsString
+      .split(',')
+      .map(s => s.trim())
+      .filter(s => s.length > 0);
+  };
+
+  // Remove a skill from the list
+  const removeSkill = (skillToRemove) => {
+    const skills = getSkillsArray(currentResume.skills);
+    const newSkills = skills.filter(s => s !== skillToRemove);
+    setCurrentResume({ ...currentResume, skills: newSkills.join(', ') });
   };
 
   const handleSubmit = (e) => {
@@ -529,6 +597,7 @@ function ResumeView() {
                             setCurrentResume({ ...currentResume, firstName: e.target.value });
                             if (errors.firstName) setErrors({ ...errors, firstName: '' });
                           }}
+                          onBlur={() => validateField('firstName')}
                           error={!!errors.firstName}
                           helperText={errors.firstName}
                         />
@@ -543,6 +612,7 @@ function ResumeView() {
                             setCurrentResume({ ...currentResume, lastName: e.target.value });
                             if (errors.lastName) setErrors({ ...errors, lastName: '' });
                           }}
+                          onBlur={() => validateField('lastName')}
                           error={!!errors.lastName}
                           helperText={errors.lastName}
                         />
@@ -558,6 +628,7 @@ function ResumeView() {
                             setCurrentResume({ ...currentResume, email: e.target.value });
                             if (errors.email) setErrors({ ...errors, email: '' });
                           }}
+                          onBlur={() => validateField('email')}
                           error={!!errors.email}
                           helperText={errors.email}
                         />
@@ -572,6 +643,7 @@ function ResumeView() {
                             setCurrentResume({ ...currentResume, zipcode: e.target.value });
                             if (errors.zipcode) setErrors({ ...errors, zipcode: '' });
                           }}
+                          onBlur={() => validateField('zipcode')}
                           error={!!errors.zipcode}
                           helperText={errors.zipcode}
                         />
@@ -597,7 +669,7 @@ function ResumeView() {
                     <TextField
                       fullWidth
                       multiline
-                      rows={3}
+                      rows={2}
                       label="Skills"
                       required
                       placeholder="JavaScript, React, Node.js, Python, SQL, AWS..."
@@ -606,9 +678,34 @@ function ResumeView() {
                         setCurrentResume({ ...currentResume, skills: e.target.value });
                         if (errors.skills) setErrors({ ...errors, skills: '' });
                       }}
+                      onBlur={() => validateField('skills')}
                       error={!!errors.skills}
                       helperText={errors.skills || "Separate skills with commas - this is the key field for job matching"}
                     />
+                    {/* Skills Chips Display */}
+                    {getSkillsArray(currentResume.skills).length > 0 && (
+                      <Box sx={{ mt: 1.5, display: 'flex', flexWrap: 'wrap', gap: 0.75 }}>
+                        {getSkillsArray(currentResume.skills).map((skill, index) => (
+                          <Chip
+                            key={index}
+                            label={skill}
+                            size="small"
+                            onDelete={() => removeSkill(skill)}
+                            sx={{
+                              background: 'rgba(139, 92, 246, 0.15)',
+                              borderColor: 'rgba(139, 92, 246, 0.3)',
+                              color: 'primary.light',
+                              '& .MuiChip-deleteIcon': {
+                                color: 'rgba(139, 92, 246, 0.6)',
+                                '&:hover': {
+                                  color: 'rgba(139, 92, 246, 1)',
+                                },
+                              },
+                            }}
+                          />
+                        ))}
+                      </Box>
+                    )}
                   </Box>
 
                   {/* Expandable Advanced Section */}
@@ -797,21 +894,44 @@ function ResumeView() {
                           </IconButton>
                         </Box>
                       </Box>
-                      <Typography variant="h6" sx={{ fontWeight: 600, mb: 1 }}>
-                        {resume.title}
-                      </Typography>
-                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, color: 'text.secondary' }}>
-                        <PersonIcon sx={{ fontSize: 16 }} />
-                        <Typography variant="body2">
-                          {resume.firstName} {resume.lastName}
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
+                        <Typography variant="h6" sx={{ fontWeight: 600 }}>
+                          {resume.title}
                         </Typography>
+                        {resume.isQuickProfile && (
+                          <Chip
+                            label="Skills Only"
+                            size="small"
+                            sx={{
+                              height: 20,
+                              fontSize: '0.65rem',
+                              background: 'rgba(16, 185, 129, 0.15)',
+                              color: 'success.light',
+                              borderColor: 'rgba(16, 185, 129, 0.3)',
+                            }}
+                          />
+                        )}
                       </Box>
-                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, color: 'text.secondary', mt: 0.5 }}>
-                        <EmailIcon sx={{ fontSize: 16 }} />
-                        <Typography variant="body2" noWrap>
-                          {resume.email}
+                      {resume.firstName || resume.lastName ? (
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, color: 'text.secondary' }}>
+                          <PersonIcon sx={{ fontSize: 16 }} />
+                          <Typography variant="body2">
+                            {resume.firstName} {resume.lastName}
+                          </Typography>
+                        </Box>
+                      ) : (
+                        <Typography variant="body2" sx={{ color: 'text.secondary', fontStyle: 'italic' }}>
+                          {getSkillsArray(resume.skills).length} skills added
                         </Typography>
-                      </Box>
+                      )}
+                      {resume.email && (
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, color: 'text.secondary', mt: 0.5 }}>
+                          <EmailIcon sx={{ fontSize: 16 }} />
+                          <Typography variant="body2" noWrap>
+                            {resume.email}
+                          </Typography>
+                        </Box>
+                      )}
                     </CardContent>
                   </Card>
                 </motion.div>

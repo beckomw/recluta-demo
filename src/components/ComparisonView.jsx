@@ -232,7 +232,7 @@ function ComparisonView() {
                   </Typography>
                 </Box>
               ) : (
-                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1, maxHeight: 280, overflowY: 'auto' }}>
                   {resumes.map((resume) => (
                     <motion.div key={resume.id} whileHover={{ scale: 1.01 }} whileTap={{ scale: 0.99 }}>
                       <Box
@@ -259,7 +259,7 @@ function ComparisonView() {
                           {resume.title}
                         </Typography>
                         <Typography variant="body2" sx={{ color: 'text.secondary' }}>
-                          {resume.firstName} {resume.lastName}
+                          {resume.firstName || resume.lastName ? `${resume.firstName} ${resume.lastName}` : 'Skills Only Profile'}
                         </Typography>
                       </Box>
                     </motion.div>
@@ -271,25 +271,20 @@ function ComparisonView() {
         </Grid>
 
         <Grid size={{ xs: 12, md: 2 }} sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-          <motion.div
-            animate={{ rotate: [0, 360] }}
-            transition={{ duration: 20, repeat: Infinity, ease: 'linear' }}
+          <Box
+            sx={{
+              width: 60,
+              height: 60,
+              borderRadius: '50%',
+              background: 'linear-gradient(135deg, #8B5CF6 0%, #06B6D4 100%)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              boxShadow: '0 4px 20px rgba(139, 92, 246, 0.4)',
+            }}
           >
-            <Box
-              sx={{
-                width: 60,
-                height: 60,
-                borderRadius: '50%',
-                background: 'linear-gradient(135deg, #8B5CF6 0%, #06B6D4 100%)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                boxShadow: '0 4px 20px rgba(139, 92, 246, 0.4)',
-              }}
-            >
-              <CompareArrowsIcon sx={{ color: 'white', fontSize: 28 }} />
-            </Box>
-          </motion.div>
+            <CompareArrowsIcon sx={{ color: 'white', fontSize: 28 }} />
+          </Box>
         </Grid>
 
         <Grid size={{ xs: 12, md: 5 }}>
@@ -322,7 +317,7 @@ function ComparisonView() {
                   </Typography>
                 </Box>
               ) : (
-                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1, maxHeight: 280, overflowY: 'auto' }}>
                   {jobs.map((job) => {
                     const skillCount = job.requirements
                       .split(',')
