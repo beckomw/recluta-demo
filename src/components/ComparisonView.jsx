@@ -25,6 +25,8 @@ import HelpOutlineIcon from '@mui/icons-material/HelpOutline';
 import RocketLaunchIcon from '@mui/icons-material/RocketLaunch';
 import PriorityHighIcon from '@mui/icons-material/PriorityHigh';
 import LocalFireDepartmentIcon from '@mui/icons-material/LocalFireDepartment';
+import VerifiedUserIcon from '@mui/icons-material/VerifiedUser';
+import FavoriteIcon from '@mui/icons-material/Favorite';
 
 function ComparisonView({ onNavigate }) {
   const [resumes, setResumes] = useState([]);
@@ -362,11 +364,19 @@ function ComparisonView({ onNavigate }) {
                             borderRadius: 2,
                             cursor: 'pointer',
                             background: selectedJob?.id === job.id
-                              ? 'linear-gradient(135deg, rgba(6, 182, 212, 0.2) 0%, rgba(16, 185, 129, 0.15) 100%)'
-                              : 'rgba(255, 255, 255, 0.03)',
+                              ? job.isFairChance
+                                ? 'linear-gradient(135deg, rgba(16, 185, 129, 0.25) 0%, rgba(6, 182, 212, 0.15) 100%)'
+                                : 'linear-gradient(135deg, rgba(6, 182, 212, 0.2) 0%, rgba(16, 185, 129, 0.15) 100%)'
+                              : job.isFairChance
+                                ? 'rgba(16, 185, 129, 0.08)'
+                                : 'rgba(255, 255, 255, 0.03)',
                             border: selectedJob?.id === job.id
-                              ? '1px solid rgba(6, 182, 212, 0.4)'
-                              : '1px solid rgba(255, 255, 255, 0.08)',
+                              ? job.isFairChance
+                                ? '1px solid rgba(16, 185, 129, 0.5)'
+                                : '1px solid rgba(6, 182, 212, 0.4)'
+                              : job.isFairChance
+                                ? '1px solid rgba(16, 185, 129, 0.2)'
+                                : '1px solid rgba(255, 255, 255, 0.08)',
                             transition: 'all 0.2s ease',
                             '&:hover': {
                               background: selectedJob?.id === job.id
@@ -377,23 +387,46 @@ function ComparisonView({ onNavigate }) {
                         >
                           <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                             <Box>
-                              <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
-                                {job.title}
-                              </Typography>
+                              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
+                                  {job.title}
+                                </Typography>
+                                {job.isFairChance && (
+                                  <VerifiedUserIcon sx={{ fontSize: 16, color: '#10B981' }} />
+                                )}
+                              </Box>
                               <Typography variant="body2" sx={{ color: 'text.secondary' }}>
                                 {job.company}
                               </Typography>
                             </Box>
-                            <Chip
-                              size="small"
-                              label={`${skillCount} skills`}
-                              sx={{
-                                background: 'rgba(6, 182, 212, 0.2)',
-                                color: 'secondary.light',
-                                fontSize: '0.7rem',
-                                height: 22,
-                              }}
-                            />
+                            <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 0.5 }}>
+                              <Chip
+                                size="small"
+                                label={`${skillCount} skills`}
+                                sx={{
+                                  background: 'rgba(6, 182, 212, 0.2)',
+                                  color: 'secondary.light',
+                                  fontSize: '0.7rem',
+                                  height: 22,
+                                }}
+                              />
+                              {job.isFairChance && (
+                                <Chip
+                                  size="small"
+                                  icon={<VerifiedUserIcon sx={{ fontSize: '14px !important', color: '#10B981 !important' }} />}
+                                  label="Fair Chance"
+                                  sx={{
+                                    background: 'rgba(16, 185, 129, 0.15)',
+                                    color: '#10B981',
+                                    fontSize: '0.65rem',
+                                    height: 20,
+                                    '& .MuiChip-icon': {
+                                      marginLeft: '4px',
+                                    },
+                                  }}
+                                />
+                              )}
+                            </Box>
                           </Box>
                         </Box>
                       </motion.div>
@@ -481,6 +514,47 @@ function ComparisonView({ onNavigate }) {
                       <Typography variant="body1" sx={{ color: 'text.secondary', maxWidth: 500 }}>
                         {analysis.recommendation}
                       </Typography>
+
+                      {/* Fair Chance Employer Highlight */}
+                      {selectedJob?.isFairChance && (
+                        <Box
+                          sx={{
+                            mt: 2,
+                            p: 2,
+                            borderRadius: 2,
+                            background: 'linear-gradient(135deg, rgba(16, 185, 129, 0.15) 0%, rgba(16, 185, 129, 0.05) 100%)',
+                            border: '1px solid rgba(16, 185, 129, 0.3)',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: 1.5,
+                          }}
+                        >
+                          <Box
+                            sx={{
+                              width: 36,
+                              height: 36,
+                              borderRadius: '50%',
+                              background: 'rgba(16, 185, 129, 0.2)',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                            }}
+                          >
+                            <FavoriteIcon sx={{ color: '#10B981', fontSize: 20 }} />
+                          </Box>
+                          <Box>
+                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                              <VerifiedUserIcon sx={{ color: '#10B981', fontSize: 18 }} />
+                              <Typography variant="subtitle2" sx={{ color: '#10B981', fontWeight: 700 }}>
+                                Fair Chance Employer
+                              </Typography>
+                            </Box>
+                            <Typography variant="caption" sx={{ color: 'text.secondary' }}>
+                              {selectedJob.fairChanceNotes || 'This employer considers candidates with criminal records and values second chances.'}
+                            </Typography>
+                          </Box>
+                        </Box>
+                      )}
                     </motion.div>
                   </Box>
 
