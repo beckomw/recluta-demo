@@ -7,6 +7,7 @@ import {
   Button,
   Chip,
   Grid,
+  Badge,
 } from '@mui/material';
 import { motion, AnimatePresence } from 'framer-motion';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
@@ -17,6 +18,7 @@ import CompareArrowsIcon from '@mui/icons-material/CompareArrows';
 import EmojiEventsIcon from '@mui/icons-material/EmojiEvents';
 import TrendingUpIcon from '@mui/icons-material/TrendingUp';
 import SchoolIcon from '@mui/icons-material/School';
+import InsightsIcon from '@mui/icons-material/Insights';
 
 function ComparisonView() {
   const [resumes, setResumes] = useState([]);
@@ -24,6 +26,7 @@ function ComparisonView() {
   const [selectedResume, setSelectedResume] = useState(null);
   const [selectedJob, setSelectedJob] = useState(null);
   const [analysis, setAnalysis] = useState(null);
+  const [topSkills, setTopSkills] = useState([]);
 
   useEffect(() => {
     loadData();
@@ -34,7 +37,25 @@ function ComparisonView() {
     const storedJobs = localStorage.getItem('app_jobs');
 
     if (storedResumes) setResumes(JSON.parse(storedResumes));
-    if (storedJobs) setJobs(JSON.parse(storedJobs));
+    if (storedJobs) {
+      const parsedJobs = JSON.parse(storedJobs);
+      setJobs(parsedJobs);
+
+      // Calculate top skills from jobs
+      if (parsedJobs.length > 0) {
+        const allSkills = parsedJobs.flatMap((job) =>
+          job.requirements.split(',').map((s) => s.trim().toLowerCase()).filter((s) => s.length > 0)
+        );
+        const skillCounts = allSkills.reduce((acc, skill) => {
+          acc[skill] = (acc[skill] || 0) + 1;
+          return acc;
+        }, {});
+        const sorted = Object.entries(skillCounts)
+          .sort((a, b) => b[1] - a[1])
+          .slice(0, 5);
+        setTopSkills(sorted);
+      }
+    }
   };
 
   const compareResumeToJob = () => {
@@ -239,37 +260,57 @@ function ComparisonView() {
                 </Box>
               ) : (
                 <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
-                  {jobs.map((job) => (
-                    <motion.div key={job.id} whileHover={{ scale: 1.01 }} whileTap={{ scale: 0.99 }}>
-                      <Box
-                        onClick={() => setSelectedJob(job)}
-                        sx={{
-                          p: 2,
-                          borderRadius: 2,
-                          cursor: 'pointer',
-                          background: selectedJob?.id === job.id
-                            ? 'linear-gradient(135deg, rgba(6, 182, 212, 0.2) 0%, rgba(16, 185, 129, 0.15) 100%)'
-                            : 'rgba(255, 255, 255, 0.03)',
-                          border: selectedJob?.id === job.id
-                            ? '1px solid rgba(6, 182, 212, 0.4)'
-                            : '1px solid rgba(255, 255, 255, 0.08)',
-                          transition: 'all 0.2s ease',
-                          '&:hover': {
+                  {jobs.map((job) => {
+                    const skillCount = job.requirements
+                      .split(',')
+                      .map(s => s.trim())
+                      .filter(s => s.length > 0).length;
+                    return (
+                      <motion.div key={job.id} whileHover={{ scale: 1.01 }} whileTap={{ scale: 0.99 }}>
+                        <Box
+                          onClick={() => setSelectedJob(job)}
+                          sx={{
+                            p: 2,
+                            borderRadius: 2,
+                            cursor: 'pointer',
                             background: selectedJob?.id === job.id
-                              ? 'linear-gradient(135deg, rgba(6, 182, 212, 0.25) 0%, rgba(16, 185, 129, 0.2) 100%)'
-                              : 'rgba(255, 255, 255, 0.06)',
-                          },
-                        }}
-                      >
-                        <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
-                          {job.title}
-                        </Typography>
-                        <Typography variant="body2" sx={{ color: 'text.secondary' }}>
-                          {job.company}
-                        </Typography>
-                      </Box>
-                    </motion.div>
-                  ))}
+                              ? 'linear-gradient(135deg, rgba(6, 182, 212, 0.2) 0%, rgba(16, 185, 129, 0.15) 100%)'
+                              : 'rgba(255, 255, 255, 0.03)',
+                            border: selectedJob?.id === job.id
+                              ? '1px solid rgba(6, 182, 212, 0.4)'
+                              : '1px solid rgba(255, 255, 255, 0.08)',
+                            transition: 'all 0.2s ease',
+                            '&:hover': {
+                              background: selectedJob?.id === job.id
+                                ? 'linear-gradient(135deg, rgba(6, 182, 212, 0.25) 0%, rgba(16, 185, 129, 0.2) 100%)'
+                                : 'rgba(255, 255, 255, 0.06)',
+                            },
+                          }}
+                        >
+                          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                            <Box>
+                              <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
+                                {job.title}
+                              </Typography>
+                              <Typography variant="body2" sx={{ color: 'text.secondary' }}>
+                                {job.company}
+                              </Typography>
+                            </Box>
+                            <Chip
+                              size="small"
+                              label={`${skillCount} skills`}
+                              sx={{
+                                background: 'rgba(6, 182, 212, 0.2)',
+                                color: 'secondary.light',
+                                fontSize: '0.7rem',
+                                height: 22,
+                              }}
+                            />
+                          </Box>
+                        </Box>
+                      </motion.div>
+                    );
+                  })}
                 </Box>
               )}
             </CardContent>
@@ -477,6 +518,84 @@ function ComparisonView() {
             Analyzing your match...
           </Typography>
         </Box>
+      )}
+
+      {/* Insights Section */}
+      {topSkills.length > 0 && (
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.3 }}
+        >
+          <Card sx={{ mt: 4 }}>
+            <CardContent sx={{ p: 4 }}>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 3 }}>
+                <Box
+                  sx={{
+                    width: 44,
+                    height: 44,
+                    borderRadius: 2,
+                    background: 'linear-gradient(135deg, #8B5CF6 0%, #06B6D4 100%)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                  }}
+                >
+                  <InsightsIcon sx={{ color: 'white' }} />
+                </Box>
+                <Box>
+                  <Typography variant="h6" sx={{ fontWeight: 600 }}>
+                    In-Demand Skills
+                  </Typography>
+                  <Typography variant="body2" sx={{ color: 'text.secondary' }}>
+                    Most requested skills across your saved jobs
+                  </Typography>
+                </Box>
+              </Box>
+              <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1.5 }}>
+                {topSkills.map(([skill, count], index) => (
+                  <motion.div
+                    key={index}
+                    initial={{ opacity: 0, scale: 0.8 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    transition={{ delay: 0.1 * index }}
+                  >
+                    <Chip
+                      label={
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                          <span style={{ textTransform: 'capitalize' }}>{skill}</span>
+                          <Box
+                            sx={{
+                              background: 'rgba(255, 255, 255, 0.2)',
+                              borderRadius: 1,
+                              px: 0.75,
+                              py: 0.25,
+                              fontSize: '0.7rem',
+                              fontWeight: 600,
+                            }}
+                          >
+                            {count}
+                          </Box>
+                        </Box>
+                      }
+                      sx={{
+                        background: index === 0
+                          ? 'linear-gradient(135deg, rgba(139, 92, 246, 0.3) 0%, rgba(6, 182, 212, 0.3) 100%)'
+                          : 'rgba(139, 92, 246, 0.15)',
+                        border: index === 0
+                          ? '1px solid rgba(139, 92, 246, 0.5)'
+                          : '1px solid rgba(139, 92, 246, 0.3)',
+                        color: 'white',
+                        py: 2,
+                        px: 1,
+                      }}
+                    />
+                  </motion.div>
+                ))}
+              </Box>
+            </CardContent>
+          </Card>
+        </motion.div>
       )}
     </Box>
   );
