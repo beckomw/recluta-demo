@@ -215,10 +215,10 @@ function ResumeView() {
       >
         <Box sx={{ mb: 4 }}>
           <Typography variant="h4" sx={{ fontWeight: 700, mb: 1 }}>
-            My Profile
+            Your Skills
           </Typography>
           <Typography variant="body1" sx={{ color: 'text.secondary' }}>
-            Create and manage your resume profiles
+            This is what we match against job requirements
           </Typography>
         </Box>
       </motion.div>
@@ -258,10 +258,10 @@ function ResumeView() {
                   </Box>
                 </motion.div>
                 <Typography variant="h5" sx={{ fontWeight: 700, mb: 1 }}>
-                  Quick Start - Get Value in 30 Seconds
+                  Find out if you're competitive — in 30 seconds
                 </Typography>
                 <Typography variant="body1" sx={{ color: 'text.secondary', mb: 3, maxWidth: 500, mx: 'auto' }}>
-                  Just enter your skills and start matching with jobs immediately. No signup, no forms - just results.
+                  Just type your skills. We'll tell you which jobs you can actually win.
                 </Typography>
                 <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
                   <Button
@@ -278,7 +278,7 @@ function ResumeView() {
                       },
                     }}
                   >
-                    Start Now - Just Skills
+                    Enter My Skills
                   </Button>
                 </motion.div>
               </Box>

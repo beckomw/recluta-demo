@@ -41,20 +41,20 @@ const floatingVariants = {
 const benefits = [
   {
     icon: AccessTimeIcon,
-    title: 'Save 10+ hours/week',
-    subtitle: 'Stop applying blindly',
+    title: 'Stop wasting time',
+    subtitle: 'Know before you apply',
     color: '#8B5CF6',
   },
   {
     icon: TrendingUpIcon,
-    title: '3x response rate',
-    subtitle: 'Apply smarter, not harder',
+    title: 'Apply to jobs you can win',
+    subtitle: 'Focus on realistic matches',
     color: '#06B6D4',
   },
   {
     icon: CheckCircleIcon,
-    title: 'Higher confidence',
-    subtitle: 'Know before you apply',
+    title: 'Build the right skills',
+    subtitle: 'See exactly what you need',
     color: '#10B981',
   },
 ];
@@ -122,7 +122,7 @@ function HeroSection({ onGetStarted }) {
                 >
                   <AutoGraphIcon sx={{ fontSize: 18, color: 'primary.light' }} />
                   <Typography variant="body2" sx={{ fontWeight: 600, color: 'primary.light' }}>
-                    AI-Powered Job Matching
+                    Free • No signup • Works instantly
                   </Typography>
                 </Box>
               </motion.div>
@@ -137,7 +137,7 @@ function HeroSection({ onGetStarted }) {
                     mb: 3,
                   }}
                 >
-                  Know if you're{' '}
+                  Stop applying to jobs{' '}
                   <Box
                     component="span"
                     sx={{
@@ -148,9 +148,8 @@ function HeroSection({ onGetStarted }) {
                       animation: 'gradient-shift 5s ease infinite',
                     }}
                   >
-                    qualified
-                  </Box>{' '}
-                  before you apply
+                    you can't win
+                  </Box>
                 </Typography>
               </motion.div>
 
@@ -165,8 +164,8 @@ function HeroSection({ onGetStarted }) {
                     fontWeight: 400,
                   }}
                 >
-                  Compare your resume against any job posting in seconds. Get an instant match score
-                  and discover exactly what skills you need to land your dream job.
+                  See your match score before you spend hours tailoring your resume.
+                  Know exactly which skills you're missing — and which jobs are worth your time.
                 </Typography>
               </motion.div>
 
@@ -194,11 +193,11 @@ function HeroSection({ onGetStarted }) {
                         },
                       }}
                     >
-                      Get Started Free
+                      Check My Fit — Free
                     </Button>
                   </motion.div>
                   <Typography variant="body2" sx={{ color: 'text.secondary' }}>
-                    No signup required. Start analyzing in 30 seconds.
+                    No signup. No email. Just paste your skills and go.
                   </Typography>
                 </Box>
               </motion.div>
@@ -238,11 +237,14 @@ function HeroSection({ onGetStarted }) {
                           WebkitTextFillColor: 'transparent',
                         }}
                       >
-                        98%
+                        95%
                       </Box>
                     </Typography>
                     <Typography variant="body1" sx={{ color: 'text.secondary' }}>
-                      of applications go to jobs you're not qualified for
+                      of job applications are wasted effort
+                    </Typography>
+                    <Typography variant="caption" sx={{ color: 'text.secondary', display: 'block', mt: 1 }}>
+                      You're competing against people who actually match
                     </Typography>
                   </Box>
 
