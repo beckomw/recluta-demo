@@ -42,20 +42,20 @@ const floatingVariants = {
 const benefits = [
   {
     icon: AccessTimeIcon,
-    title: 'Instant Fit Score',
-    subtitle: 'See in seconds whether this job is your job',
+    title: 'Competency Assessment',
+    subtitle: 'Rigorous analysis of your qualifications against role requirements',
     color: '#8B5CF6',
   },
   {
     icon: CheckCircleIcon,
-    title: 'Skill Gaps, Exposed',
-    subtitle: "Know exactly what's missing — no fluff, no guessing",
+    title: 'Gap Analysis & Growth Path',
+    subtitle: 'Identify skill gaps and receive targeted learning recommendations',
     color: '#06B6D4',
   },
   {
     icon: TrendingUpIcon,
-    title: 'Smart Targeting',
-    subtitle: 'Ignore the noise and aim where you actually compete',
+    title: 'Evidence-Based Strategy',
+    subtitle: 'Apply strategically where your profile demonstrates strongest alignment',
     color: '#10B981',
   },
 ];
@@ -138,7 +138,7 @@ function HeroSection({ onGetStarted }) {
                     mb: 3,
                   }}
                 >
-                  Match skills.{' '}
+                  Assess. Learn.{' '}
                   <Box
                     component="span"
                     sx={{
@@ -149,7 +149,7 @@ function HeroSection({ onGetStarted }) {
                       animation: 'gradient-shift 5s ease infinite',
                     }}
                   >
-                    Land interviews.
+                    Advance.
                   </Box>
                 </Typography>
               </motion.div>
@@ -165,7 +165,7 @@ function HeroSection({ onGetStarted }) {
                     fontWeight: 400,
                   }}
                 >
-                  Stop spraying resumes into the void. Start applying where you actually win.
+                  Analyze your fit, identify skill gaps, and build a focused development plan for your career goals.
                 </Typography>
               </motion.div>
 
@@ -193,11 +193,11 @@ function HeroSection({ onGetStarted }) {
                         },
                       }}
                     >
-                      Check My Fit — Free
+                      Start My Assessment — Free
                     </Button>
                   </motion.div>
                   <Typography variant="body2" sx={{ color: 'text.secondary' }}>
-                    One system. Zero chaos. Your scrappy resume command center.
+                    Structured analysis to guide your professional development
                   </Typography>
                   <Box
                     sx={{
@@ -254,10 +254,10 @@ function HeroSection({ onGetStarted }) {
                       </Box>
                     </Typography>
                     <Typography variant="body1" sx={{ color: 'text.secondary' }}>
-                      people apply. 1 gets noticed.
+                      average applicants per role
                     </Typography>
                     <Typography variant="caption" sx={{ color: 'text.secondary', display: 'block', mt: 1 }}>
-                      We think that's broken.
+                      Preparation and fit analysis improve your odds
                     </Typography>
                   </Box>
 
