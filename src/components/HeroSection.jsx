@@ -42,14 +42,14 @@ const floatingVariants = {
 const benefits = [
   {
     icon: AccessTimeIcon,
-    title: 'Instant Fit Score',
-    subtitle: 'Know where you stand in seconds',
+    title: 'Instant Match',
+    subtitle: 'Assess job compatibility',
     color: '#8B5CF6',
   },
   {
     icon: CheckCircleIcon,
     title: 'Skill Gap Detection',
-    subtitle: 'See what's missing and what to learn next',
+    subtitle: 'Missing skills and what to learn next',
     color: '#06B6D4',
   },
   {
