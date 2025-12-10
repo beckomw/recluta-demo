@@ -19,6 +19,8 @@ import {
   Switch,
   Tooltip,
   FormGroup,
+  ToggleButton,
+  ToggleButtonGroup,
 } from '@mui/material';
 import { motion, AnimatePresence } from 'framer-motion';
 import DeleteIcon from '@mui/icons-material/Delete';
@@ -40,6 +42,9 @@ import AutoAwesomeIcon from '@mui/icons-material/AutoAwesome';
 import VerifiedUserIcon from '@mui/icons-material/VerifiedUser';
 import FilterListIcon from '@mui/icons-material/FilterList';
 import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
+import SortIcon from '@mui/icons-material/Sort';
+import BoltIcon from '@mui/icons-material/Bolt';
+import ContentPasteIcon from '@mui/icons-material/ContentPaste';
 
 function JobsView({ onNavigate }) {
   const [jobs, setJobs] = useState([]);
@@ -67,6 +72,13 @@ function JobsView({ onNavigate }) {
   const [rawJobText, setRawJobText] = useState('');
   const [isParsing, setIsParsing] = useState(false);
   const firstFieldRef = useRef(null);
+
+  // New state for Quick Add mode and sorting
+  const [showQuickAdd, setShowQuickAdd] = useState(false);
+  const [quickAddText, setQuickAddText] = useState('');
+  const [quickAddUrl, setQuickAddUrl] = useState('');
+  const [sortBy, setSortBy] = useState('date'); // 'date', 'score', 'company'
+  const quickAddRef = useRef(null);
 
   // Common tech skills to look for in job descriptions
   const commonSkills = [
@@ -316,12 +328,41 @@ function JobsView({ onNavigate }) {
   };
 
   // Parse a full job posting to extract structured data
-  const parseJobPosting = (text) => {
+  const parseJobPosting = (text, providedUrl = '') => {
     const lines = text.split('\n').map(l => l.trim()).filter(l => l.length > 0);
     let title = '';
     let company = '';
     let location = '';
+    let url = providedUrl;
     const skills = new Set();
+
+    // Extract URL from the text if not provided
+    if (!url) {
+      const urlPatterns = [
+        // LinkedIn job URLs
+        /https?:\/\/(?:www\.)?linkedin\.com\/jobs\/view\/[^\s]+/gi,
+        // Indeed job URLs
+        /https?:\/\/(?:www\.)?indeed\.com\/(?:viewjob|jobs)[^\s]+/gi,
+        // Glassdoor job URLs
+        /https?:\/\/(?:www\.)?glassdoor\.com\/job-listing[^\s]+/gi,
+        // ZipRecruiter job URLs
+        /https?:\/\/(?:www\.)?ziprecruiter\.com\/[^\s]+/gi,
+        // Monster job URLs
+        /https?:\/\/(?:www\.)?monster\.com\/[^\s]+/gi,
+        // Generic job board URLs
+        /https?:\/\/[^\s]+(?:job|career|position|apply)[^\s]*/gi,
+        // Any URL as fallback
+        /https?:\/\/[^\s]+/gi,
+      ];
+
+      for (const pattern of urlPatterns) {
+        const match = text.match(pattern);
+        if (match) {
+          url = match[0].replace(/[.,;:!?)]+$/, ''); // Clean trailing punctuation
+          break;
+        }
+      }
+    }
 
     // Try to extract job title (usually first meaningful line or after "Job Title:", "Position:")
     const titlePatterns = [
@@ -420,10 +461,59 @@ function JobsView({ onNavigate }) {
       title,
       company,
       location,
+      url,
       requirements: Array.from(skills).slice(0, 15).join(', '),
       description: text,
     };
   };
+
+  // Quick Add - parse and save job in one step
+  const handleQuickAdd = () => {
+    if (!quickAddText.trim()) return;
+
+    setIsParsing(true);
+
+    // Parse the job posting with the optional URL
+    const parsed = parseJobPosting(quickAddText, quickAddUrl);
+
+    // Apply fair chance detection
+    const detection = detectFairChance(parsed);
+
+    const newJob = {
+      id: Date.now(),
+      title: parsed.title || 'Untitled Position',
+      company: parsed.company || 'Unknown Company',
+      location: parsed.location || '',
+      url: parsed.url || quickAddUrl || '',
+      description: parsed.description,
+      requirements: parsed.requirements,
+      isFairChance: detection.likely,
+      fairChanceNotes: detection.likely ? detection.reason : '',
+    };
+
+    // Validate minimum requirements
+    if (!newJob.requirements || newJob.requirements.split(',').filter(s => s.trim()).length < 2) {
+      // Extract skills from description as fallback
+      const extractedFromDesc = extractSkillsFromDescription(quickAddText);
+      newJob.requirements = extractedFromDesc.join(', ');
+    }
+
+    // Save the job
+    saveJobs([...jobs, newJob]);
+
+    // Reset quick add
+    setQuickAddText('');
+    setQuickAddUrl('');
+    setShowQuickAdd(false);
+    setIsParsing(false);
+  };
+
+  // Auto-focus quick add input
+  useEffect(() => {
+    if (showQuickAdd && quickAddRef.current) {
+      setTimeout(() => quickAddRef.current.focus(), 100);
+    }
+  }, [showQuickAdd]);
 
   // Extract concise skill phrase from a sentence, removing fluff
   const extractConciseSkill = (text) => {
@@ -697,14 +787,28 @@ function JobsView({ onNavigate }) {
       displayedJobs = displayedJobs.filter(job => job.isFairChance);
     }
 
-    // Sort Fair Chance jobs first if enabled
-    if (sortFairChanceFirst) {
-      displayedJobs.sort((a, b) => {
+    // Apply sorting
+    displayedJobs.sort((a, b) => {
+      // Fair Chance sorting takes precedence if enabled
+      if (sortFairChanceFirst) {
         if (a.isFairChance && !b.isFairChance) return -1;
         if (!a.isFairChance && b.isFairChance) return 1;
-        return 0;
-      });
-    }
+      }
+
+      // Then apply main sort
+      switch (sortBy) {
+        case 'score': {
+          const scoreA = getBestMatchForJob(a)?.score || 0;
+          const scoreB = getBestMatchForJob(b)?.score || 0;
+          return scoreB - scoreA; // Highest score first
+        }
+        case 'company':
+          return (a.company || '').localeCompare(b.company || '');
+        case 'date':
+        default:
+          return (b.id || 0) - (a.id || 0); // Newest first
+      }
+    });
 
     return displayedJobs;
   };
@@ -753,23 +857,183 @@ function JobsView({ onNavigate }) {
               Track Jobs
             </Typography>
             <Typography variant="body1" sx={{ color: 'text.secondary' }}>
-              Save job postings you want to compare against your profile
+              Paste a job posting to instantly see your match score
             </Typography>
           </Box>
-          {!showForm && (
-            <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
-              <Button
-                variant="contained"
-                startIcon={<AddIcon />}
-                onClick={() => setShowForm(true)}
-                sx={{ px: 3 }}
-              >
-                Add Job
-              </Button>
-            </motion.div>
+          {!showForm && !showQuickAdd && (
+            <Box sx={{ display: 'flex', gap: 1 }}>
+              <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
+                <Button
+                  variant="contained"
+                  startIcon={<BoltIcon />}
+                  onClick={() => setShowQuickAdd(true)}
+                  sx={{
+                    px: 3,
+                    background: 'linear-gradient(135deg, #10B981 0%, #06B6D4 100%)',
+                    '&:hover': {
+                      background: 'linear-gradient(135deg, #059669 0%, #0891B2 100%)',
+                    },
+                  }}
+                >
+                  Quick Add
+                </Button>
+              </motion.div>
+              <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
+                <Button
+                  variant="outlined"
+                  startIcon={<AddIcon />}
+                  onClick={() => setShowForm(true)}
+                  sx={{
+                    borderColor: 'rgba(139, 92, 246, 0.5)',
+                    color: 'primary.light',
+                    '&:hover': {
+                      borderColor: 'primary.main',
+                      background: 'rgba(139, 92, 246, 0.1)',
+                    },
+                  }}
+                >
+                  Detailed
+                </Button>
+              </motion.div>
+            </Box>
           )}
         </Box>
       </motion.div>
+
+      {/* QUICK ADD MODE - One paste to add */}
+      <AnimatePresence>
+        {showQuickAdd && (
+          <motion.div
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -20 }}
+            transition={{ duration: 0.3 }}
+          >
+            <Card
+              sx={{
+                mb: 4,
+                background: 'linear-gradient(135deg, rgba(16, 185, 129, 0.1) 0%, rgba(15, 15, 35, 0.95) 100%)',
+                border: '2px solid rgba(16, 185, 129, 0.4)',
+              }}
+            >
+              <CardContent sx={{ p: 4 }}>
+                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                    <Box
+                      sx={{
+                        width: 48,
+                        height: 48,
+                        borderRadius: 2,
+                        background: 'linear-gradient(135deg, #10B981 0%, #06B6D4 100%)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                      }}
+                    >
+                      <ContentPasteIcon sx={{ color: 'white' }} />
+                    </Box>
+                    <Box>
+                      <Typography variant="h6" sx={{ fontWeight: 700 }}>
+                        Quick Add Job
+                      </Typography>
+                      <Typography variant="body2" sx={{ color: 'text.secondary' }}>
+                        Paste the job description, we'll extract everything
+                      </Typography>
+                    </Box>
+                  </Box>
+                  <IconButton
+                    onClick={() => {
+                      setShowQuickAdd(false);
+                      setQuickAddText('');
+                      setQuickAddUrl('');
+                    }}
+                    sx={{ color: 'text.secondary' }}
+                  >
+                    <CloseIcon />
+                  </IconButton>
+                </Box>
+
+                <TextField
+                  fullWidth
+                  multiline
+                  rows={6}
+                  inputRef={quickAddRef}
+                  placeholder="Paste the entire job posting here... We'll automatically extract the title, company, skills, and URL."
+                  value={quickAddText}
+                  onChange={(e) => setQuickAddText(e.target.value)}
+                  sx={{
+                    mb: 2,
+                    '& .MuiOutlinedInput-root': {
+                      background: 'rgba(16, 185, 129, 0.05)',
+                      '&:hover': {
+                        background: 'rgba(16, 185, 129, 0.08)',
+                      },
+                      '&.Mui-focused': {
+                        background: 'rgba(16, 185, 129, 0.1)',
+                      },
+                    },
+                  }}
+                />
+
+                <TextField
+                  fullWidth
+                  label="Job URL (optional)"
+                  placeholder="https://linkedin.com/jobs/... or paste it in the description above"
+                  value={quickAddUrl}
+                  onChange={(e) => setQuickAddUrl(e.target.value)}
+                  sx={{ mb: 3 }}
+                  InputProps={{
+                    startAdornment: <LinkIcon sx={{ color: 'text.secondary', mr: 1 }} />,
+                  }}
+                />
+
+                {quickAddText.length > 50 && (
+                  <motion.div
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                  >
+                    <Box sx={{ mb: 3, p: 2, borderRadius: 2, background: 'rgba(16, 185, 129, 0.1)' }}>
+                      <Typography variant="body2" sx={{ color: 'success.light', display: 'flex', alignItems: 'center', gap: 1 }}>
+                        <AutoAwesomeIcon sx={{ fontSize: 18 }} />
+                        {extractSkillsFromDescription(quickAddText).length} skills detected - Ready to add!
+                      </Typography>
+                    </Box>
+                  </motion.div>
+                )}
+
+                <Box sx={{ display: 'flex', gap: 2 }}>
+                  <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} style={{ flex: 1 }}>
+                    <Button
+                      fullWidth
+                      variant="contained"
+                      size="large"
+                      startIcon={isParsing ? null : <BoltIcon />}
+                      onClick={handleQuickAdd}
+                      disabled={quickAddText.trim().length < 50 || isParsing}
+                      sx={{
+                        py: 1.5,
+                        background: 'linear-gradient(135deg, #10B981 0%, #06B6D4 100%)',
+                        '&:hover': {
+                          background: 'linear-gradient(135deg, #059669 0%, #0891B2 100%)',
+                        },
+                        '&:disabled': {
+                          background: 'rgba(255,255,255,0.1)',
+                        },
+                      }}
+                    >
+                      {isParsing ? 'Adding...' : 'Add Job & See Match Score'}
+                    </Button>
+                  </motion.div>
+                </Box>
+
+                <Typography variant="body2" sx={{ color: 'text.secondary', mt: 2, textAlign: 'center' }}>
+                  You can edit the details after adding
+                </Typography>
+              </CardContent>
+            </Card>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       <AnimatePresence>
         {showForm && (
@@ -1080,15 +1344,68 @@ function JobsView({ onNavigate }) {
       </AnimatePresence>
 
       <Box sx={{ mb: 2 }}>
-        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
+        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2, flexWrap: 'wrap', gap: 2 }}>
           <Typography variant="h5" sx={{ fontWeight: 600 }}>
             Saved Jobs
           </Typography>
-          <Typography variant="body2" sx={{ color: 'text.secondary' }}>
-            {showFairChanceOnly
-              ? `${getDisplayedJobs().length} of ${jobs.length} job${jobs.length !== 1 ? 's' : ''}`
-              : `${jobs.length} job${jobs.length !== 1 ? 's' : ''}`}
-          </Typography>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+            {/* Sorting Controls */}
+            {jobs.length > 1 && (
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                <SortIcon sx={{ color: 'text.secondary', fontSize: 20 }} />
+                <ToggleButtonGroup
+                  value={sortBy}
+                  exclusive
+                  onChange={(e, newSort) => newSort && setSortBy(newSort)}
+                  size="small"
+                  sx={{
+                    '& .MuiToggleButton-root': {
+                      color: 'text.secondary',
+                      borderColor: 'rgba(255, 255, 255, 0.1)',
+                      px: 1.5,
+                      py: 0.5,
+                      fontSize: '0.75rem',
+                      '&.Mui-selected': {
+                        background: sortBy === 'score'
+                          ? 'rgba(16, 185, 129, 0.2)'
+                          : 'rgba(139, 92, 246, 0.2)',
+                        color: sortBy === 'score' ? '#10B981' : 'primary.light',
+                        borderColor: sortBy === 'score'
+                          ? 'rgba(16, 185, 129, 0.4)'
+                          : 'rgba(139, 92, 246, 0.4)',
+                        '&:hover': {
+                          background: sortBy === 'score'
+                            ? 'rgba(16, 185, 129, 0.3)'
+                            : 'rgba(139, 92, 246, 0.3)',
+                        },
+                      },
+                    },
+                  }}
+                >
+                  <ToggleButton value="score">
+                    <Tooltip title="Best matches first">
+                      <span>Match %</span>
+                    </Tooltip>
+                  </ToggleButton>
+                  <ToggleButton value="date">
+                    <Tooltip title="Most recent first">
+                      <span>Recent</span>
+                    </Tooltip>
+                  </ToggleButton>
+                  <ToggleButton value="company">
+                    <Tooltip title="Sort by company name">
+                      <span>Company</span>
+                    </Tooltip>
+                  </ToggleButton>
+                </ToggleButtonGroup>
+              </Box>
+            )}
+            <Typography variant="body2" sx={{ color: 'text.secondary' }}>
+              {showFairChanceOnly
+                ? `${getDisplayedJobs().length} of ${jobs.length} job${jobs.length !== 1 ? 's' : ''}`
+                : `${jobs.length} job${jobs.length !== 1 ? 's' : ''}`}
+            </Typography>
+          </Box>
         </Box>
 
         {/* Fair Chance Filter/Sort Controls */}
@@ -1146,25 +1463,60 @@ function JobsView({ onNavigate }) {
       </Box>
 
       {jobs.length === 0 ? (
-        <Card>
+        <Card
+          sx={{
+            background: 'linear-gradient(135deg, rgba(16, 185, 129, 0.08) 0%, rgba(15, 15, 35, 0.95) 100%)',
+            border: '1px solid rgba(16, 185, 129, 0.2)',
+          }}
+        >
           <CardContent sx={{ p: 6, textAlign: 'center' }}>
-            <WorkIcon sx={{ fontSize: 64, color: 'rgba(255, 255, 255, 0.2)', mb: 2 }} />
-            <Typography variant="h6" sx={{ color: 'text.secondary', mb: 1 }}>
-              No jobs saved yet
-            </Typography>
-            <Typography variant="body2" sx={{ color: 'text.secondary', mb: 3 }}>
-              Add job postings you're interested in to compare against your resume
-            </Typography>
-            <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
-              <Button
-                variant="contained"
-                startIcon={<AddIcon />}
-                onClick={() => setShowForm(true)}
-                sx={{ px: 4, py: 1.5 }}
+            <motion.div
+              initial={{ scale: 0 }}
+              animate={{ scale: 1 }}
+              transition={{ type: 'spring', duration: 0.5 }}
+            >
+              <Box
+                sx={{
+                  width: 80,
+                  height: 80,
+                  borderRadius: '50%',
+                  background: 'linear-gradient(135deg, #10B981 0%, #06B6D4 100%)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  mx: 'auto',
+                  mb: 3,
+                  boxShadow: '0 8px 32px rgba(16, 185, 129, 0.3)',
+                }}
               >
-                Add Your First Job
-              </Button>
+                <ContentPasteIcon sx={{ fontSize: 40, color: 'white' }} />
+              </Box>
             </motion.div>
+            <Typography variant="h5" sx={{ fontWeight: 700, mb: 1 }}>
+              See Your Match Score Instantly
+            </Typography>
+            <Typography variant="body1" sx={{ color: 'text.secondary', mb: 3, maxWidth: 400, mx: 'auto' }}>
+              Paste a job posting and we'll tell you how competitive you are. One paste = your score.
+            </Typography>
+            <Box sx={{ display: 'flex', gap: 2, justifyContent: 'center', flexWrap: 'wrap' }}>
+              <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
+                <Button
+                  variant="contained"
+                  startIcon={<BoltIcon />}
+                  onClick={() => setShowQuickAdd(true)}
+                  sx={{
+                    px: 4,
+                    py: 1.5,
+                    background: 'linear-gradient(135deg, #10B981 0%, #06B6D4 100%)',
+                    '&:hover': {
+                      background: 'linear-gradient(135deg, #059669 0%, #0891B2 100%)',
+                    },
+                  }}
+                >
+                  Paste Your First Job
+                </Button>
+              </motion.div>
+            </Box>
           </CardContent>
         </Card>
       ) : (
