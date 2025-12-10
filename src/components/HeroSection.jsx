@@ -138,7 +138,7 @@ function HeroSection({ onGetStarted }) {
                     mb: 3,
                   }}
                 >
-                  Stop applying to jobs{' '}
+                  Match your skills to the right roles.{' '}
                   <Box
                     component="span"
                     sx={{
@@ -149,7 +149,7 @@ function HeroSection({ onGetStarted }) {
                       animation: 'gradient-shift 5s ease infinite',
                     }}
                   >
-                    you can't win
+                    Land more interviews.
                   </Box>
                 </Typography>
               </motion.div>
