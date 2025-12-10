@@ -2,38 +2,27 @@
 
 **Know if you're competitive before you apply.**
 
-Recluta is a job application readiness platform that helps professionals assess their competitiveness for specific roles. Stop wasting time on applications you won't win—focus on opportunities where you can succeed.
+## Introduction
 
-## The Problem
+Recluta is a client-side job application readiness platform that analyzes how well your skills match job requirements—before you spend hours on applications. Upload your resume, paste a job posting, and get an instant match score with actionable insights.
 
-95% of job applications are wasted effort. Most job seekers apply to roles they're not competitive for and never hear back. Recluta solves this by giving you instant feedback on how well you match a position before you apply.
+No signup. No backend. Your data never leaves your browser.
 
-## Features
+## Why Recluta?
 
-- **Resume Management** — Create and manage multiple resume profiles with structured data capture
-- **Job Tracking** — Save job postings you're considering and organize requirements
-- **Match Analysis** — Compare your resume against job requirements with instant scoring
-- **Skills Gap Detection** — See exactly which skills you have and which you're missing
-- **Smart Matching** — Fuzzy matching handles variations (e.g., "JavaScript" matches "JS", "React.js")
-- **Actionable Insights** — Get personalized recommendations based on your match percentage
+The average corporate job receives **250+ applications**. Yet 95% of applicants never hear back because they're applying to roles they're not competitive for. Most job seekers waste countless hours tailoring resumes for positions where they have little chance.
 
-## Tech Stack
+**Recluta fixes this by answering one question: Should I apply?**
 
-- **Framework:** React 19
-- **UI Library:** Material UI (MUI) 7
-- **Animations:** Framer Motion
-- **Build Tool:** Vite
-- **Styling:** Emotion
-- **Storage:** Browser LocalStorage
+Instead of blindly applying everywhere, you can:
+- See your match percentage before investing time
+- Identify exact skill gaps to address
+- Prioritize applications where you're genuinely competitive
+- Track your application pipeline in one place
 
-## Getting Started
+This isn't about limiting opportunities—it's about strategic focus. Apply to fewer jobs, but the right jobs.
 
-### Prerequisites
-
-- Node.js 18+
-- npm or yarn
-
-### Installation
+## Installation
 
 ```bash
 # Clone the repository
@@ -47,66 +36,91 @@ npm install
 npm run dev
 ```
 
-The app will be available at `http://localhost:5173`
+Open `http://localhost:5173` in your browser.
 
-### Build for Production
+**Requirements:** Node.js 18+
+
+### Production Build
 
 ```bash
-npm run build
-npm run preview
+npm run build    # Creates optimized build in dist/
+npm run preview  # Preview production build locally
 ```
 
-## Usage
+### Deploy
 
-1. **Add Your Resume** — Enter your skills, experience, and qualifications
-2. **Save Job Postings** — Paste job descriptions and requirements
-3. **Compare** — Select a resume and job to see your match score
-4. **Decide** — Use the analysis to prioritize where to apply
+Deploy to Vercel with `vercel` or push to any static host (Netlify, GitHub Pages, AWS S3). The `dist` folder contains everything needed.
+
+## Use Case
+
+**Sarah is a frontend developer looking for her next role.**
+
+1. **Creates her profile** — Uploads her PDF resume. Recluta extracts her skills: React, TypeScript, CSS, Jest, Git.
+
+2. **Saves interesting jobs** — Pastes job descriptions from LinkedIn. Recluta auto-extracts required skills from each posting.
+
+3. **Compares before applying** —
+   - Job A (Startup): 85% match. Missing: GraphQL. → *Apply confidently, mention willingness to learn GraphQL*
+   - Job B (Enterprise): 45% match. Missing: Angular, RxJS, Java. → *Skip for now, too many gaps*
+   - Job C (Agency): 72% match. Missing: Figma. → *Apply, highlight transferable design skills*
+
+4. **Tracks applications** — Logs applied jobs, interview dates, and status. Dashboard shows her pipeline at a glance.
+
+**Result:** Sarah applies to 8 targeted jobs instead of 40 random ones. Gets 3 interviews instead of 0.
 
 ### Match Score Guide
 
-| Score | Verdict | Recommendation |
-|-------|---------|----------------|
-| 80%+ | Excellent Match | Apply with confidence |
-| 60-79% | Good Match | Highlight transferable skills |
-| 40-59% | Moderate Match | Consider addressing skill gaps first |
-| <40% | Low Match | May need significant upskilling |
+| Score | Verdict | Action |
+|-------|---------|--------|
+| 80%+ | Excellent | Apply with confidence |
+| 60-79% | Good | Apply, highlight transferable skills |
+| 40-59% | Moderate | Consider upskilling first |
+| <40% | Low | Focus elsewhere or bridge significant gaps |
 
-## Deployment
+## Features
 
-### Vercel (Recommended)
+| Feature | Description |
+|---------|-------------|
+| **Resume Profiles** | Create multiple resumes, upload PDFs for auto-extraction |
+| **Job Tracking** | Save postings with auto-extracted skill requirements |
+| **Match Analysis** | Fuzzy skill matching (React.js = React = ReactJS) |
+| **Gap Detection** | See exactly what you're missing for each role |
+| **Application Pipeline** | Track status from Applied → Interview → Offer |
+| **Dashboard** | Stats, progress tracking, and gamified XP system |
+| **Fair Chance Detection** | Identifies employers known for fair hiring practices |
 
-```bash
-npm install -g vercel
-vercel
-```
+## Tech Stack
 
-Or connect your GitHub repository to [Vercel](https://vercel.com) for automatic deployments.
-
-### Other Platforms
-
-Build the project and deploy the `dist` folder to any static hosting service (Netlify, GitHub Pages, AWS S3, etc.).
+| Layer | Technology |
+|-------|------------|
+| Framework | React 19 |
+| UI | Material UI 7 |
+| Animations | Framer Motion |
+| Build | Vite |
+| PDF Parsing | PDF.js |
+| Storage | localStorage (100% client-side) |
 
 ## Project Structure
 
 ```
 src/
 ├── components/
-│   ├── Header.jsx          # Navigation header
-│   ├── HeroSection.jsx     # Landing hero
-│   ├── ResumeView.jsx      # Resume management
-│   ├── JobsView.jsx        # Job posting tracker
-│   ├── ComparisonView.jsx  # Match analysis
-│   ├── DashboardView.jsx   # Overview dashboard
-│   └── Footer.jsx          # Site footer
-├── App.jsx                 # Main application
-├── main.jsx                # Entry point
-└── theme.js                # MUI theme configuration
+│   ├── ResumeView.jsx          # Resume management + PDF parsing
+│   ├── JobsView.jsx            # Job tracking + skill extraction
+│   ├── ComparisonView.jsx      # Match analysis engine
+│   ├── ApplicationTrackerView.jsx  # Application pipeline
+│   ├── DashboardView.jsx       # Stats + gamification
+│   ├── HeroSection.jsx         # Landing page
+│   ├── Header.jsx              # Navigation
+│   └── Footer.jsx              # Footer + data controls
+├── App.jsx                     # Layout + routing
+├── theme.js                    # Dark mode theme
+└── main.jsx                    # Entry point
 ```
 
-## Data Privacy
+## Privacy
 
-All data is stored locally in your browser's localStorage. Nothing is sent to external servers. Your resume and job data stays on your device.
+**Your data stays on your device.** Recluta runs entirely in your browser with no backend, accounts, or external API calls. All data persists in localStorage and can be cleared anytime from the footer.
 
 ## License
 
@@ -114,4 +128,4 @@ MIT
 
 ---
 
-Built to help you focus on opportunities you can win.
+**Stop spraying and praying. Start applying strategically.**
