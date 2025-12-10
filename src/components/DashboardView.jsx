@@ -7,6 +7,7 @@ import {
   LinearProgress,
   Chip,
   Grid,
+  Button,
 } from '@mui/material';
 import { motion } from 'framer-motion';
 import EmojiEventsIcon from '@mui/icons-material/EmojiEvents';
@@ -18,6 +19,11 @@ import WorkIcon from '@mui/icons-material/Work';
 import CompareArrowsIcon from '@mui/icons-material/CompareArrows';
 import TrendingUpIcon from '@mui/icons-material/TrendingUp';
 import LockIcon from '@mui/icons-material/Lock';
+import SendIcon from '@mui/icons-material/Send';
+import VideocamIcon from '@mui/icons-material/Videocam';
+import LocalOfferIcon from '@mui/icons-material/LocalOffer';
+import CheckCircleIcon from '@mui/icons-material/CheckCircle';
+import TimelineIcon from '@mui/icons-material/Timeline';
 
 const containerVariants = {
   hidden: { opacity: 0 },
@@ -34,7 +40,7 @@ const itemVariants = {
   visible: { opacity: 1, y: 0 },
 };
 
-function DashboardView() {
+function DashboardView({ onNavigate }) {
   const [stats, setStats] = useState({
     comparisons: 0,
     resumes: 0,
@@ -44,6 +50,10 @@ function DashboardView() {
     level: 1,
     xp: 0,
     streak: 0,
+    applications: 0,
+    activeApps: 0,
+    interviews: 0,
+    offers: 0,
   });
   const [topSkills, setTopSkills] = useState([]);
 
@@ -54,8 +64,18 @@ function DashboardView() {
   const calculateStats = () => {
     const jobs = JSON.parse(localStorage.getItem('app_jobs') || '[]');
     const resumes = JSON.parse(localStorage.getItem('app_resumes') || '[]');
+    const applications = JSON.parse(localStorage.getItem('app_applications') || '[]');
 
-    const xpEarned = (resumes.length * 50) + (jobs.length * 30);
+    // Application stats
+    const activeStatuses = ['applied', 'employer_viewed', 'phone_screen', 'interview', 'technical_assessment', 'offer_received'];
+    const interviewStatuses = ['phone_screen', 'interview', 'technical_assessment'];
+
+    const activeApps = applications.filter(app => activeStatuses.includes(app.status) && !app.isArchived);
+    const interviews = applications.filter(app => interviewStatuses.includes(app.status) && !app.isArchived);
+    const offers = applications.filter(app => app.status === 'offer_received' && !app.isArchived);
+
+    // Calculate XP including applications
+    const xpEarned = (resumes.length * 50) + (jobs.length * 30) + (applications.length * 25) + (interviews.length * 50) + (offers.length * 100);
     const level = Math.floor(xpEarned / 200) + 1;
 
     setStats({
@@ -66,7 +86,11 @@ function DashboardView() {
       bestMatch: jobs.length > 0 ? Math.floor(Math.random() * 30) + 70 : 0,
       level,
       xp: xpEarned % 200,
-      streak: Math.min(resumes.length + jobs.length, 7),
+      streak: Math.min(resumes.length + jobs.length + applications.length, 7),
+      applications: applications.length,
+      activeApps: activeApps.length,
+      interviews: interviews.length,
+      offers: offers.length,
     });
 
     if (jobs.length > 0) {
@@ -92,13 +116,15 @@ function DashboardView() {
     { name: 'Job Hunter', description: 'Add 3 job postings', icon: '🔍', unlocked: stats.jobs >= 3, color: '#06B6D4' },
     { name: 'Analyzer', description: 'Make 5 comparisons', icon: '📊', unlocked: stats.comparisons >= 5, color: '#10B981' },
     { name: 'On Fire', description: '7 day streak', icon: '🔥', unlocked: stats.streak >= 7, color: '#F59E0B' },
+    { name: 'Applicant', description: 'Track 5 applications', icon: '📨', unlocked: stats.applications >= 5, color: '#EC4899' },
+    { name: 'Interview Pro', description: 'Get 3 interviews', icon: '🎤', unlocked: stats.interviews >= 3, color: '#06B6D4' },
   ];
 
   const statCards = [
     { label: 'Resumes', value: stats.resumes, icon: DescriptionIcon, color: '#8B5CF6' },
     { label: 'Jobs Saved', value: stats.jobs, icon: WorkIcon, color: '#06B6D4' },
-    { label: 'Comparisons', value: stats.comparisons, icon: CompareArrowsIcon, color: '#EC4899' },
-    { label: 'Best Match', value: `${stats.bestMatch}%`, icon: TrendingUpIcon, color: '#10B981' },
+    { label: 'Applications', value: stats.applications, icon: SendIcon, color: '#EC4899' },
+    { label: 'In Interviews', value: stats.interviews, icon: VideocamIcon, color: '#10B981' },
   ];
 
   return (
@@ -286,6 +312,141 @@ function DashboardView() {
           </Grid>
         ))}
       </Grid>
+
+      {/* Application Journey Card */}
+      {stats.applications > 0 && (
+        <motion.div variants={itemVariants}>
+          <Card
+            sx={{
+              mb: 4,
+              background: 'linear-gradient(135deg, rgba(236, 72, 153, 0.15) 0%, rgba(139, 92, 246, 0.1) 100%)',
+              border: '1px solid rgba(236, 72, 153, 0.3)',
+            }}
+          >
+            <CardContent sx={{ p: 4 }}>
+              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                  <Box
+                    sx={{
+                      width: 48,
+                      height: 48,
+                      borderRadius: 2,
+                      background: 'linear-gradient(135deg, #EC4899 0%, #8B5CF6 100%)',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                    }}
+                  >
+                    <TimelineIcon sx={{ color: 'white', fontSize: 24 }} />
+                  </Box>
+                  <Box>
+                    <Typography variant="h6" sx={{ fontWeight: 600 }}>
+                      Application Journey
+                    </Typography>
+                    <Typography variant="body2" sx={{ color: 'text.secondary' }}>
+                      Track your progress from application to offer
+                    </Typography>
+                  </Box>
+                </Box>
+                <Button
+                  variant="outlined"
+                  onClick={() => onNavigate?.('applications')}
+                  sx={{
+                    borderColor: '#EC4899',
+                    color: '#EC4899',
+                    '&:hover': {
+                      borderColor: '#EC4899',
+                      background: 'rgba(236, 72, 153, 0.1)',
+                    },
+                  }}
+                >
+                  View All
+                </Button>
+              </Box>
+
+              <Grid container spacing={3}>
+                <Grid size={{ xs: 6, sm: 3 }}>
+                  <Box sx={{ textAlign: 'center' }}>
+                    <SendIcon sx={{ fontSize: 28, color: '#8B5CF6', mb: 1 }} />
+                    <Typography variant="h5" sx={{ fontWeight: 700, color: '#8B5CF6' }}>
+                      {stats.applications}
+                    </Typography>
+                    <Typography variant="caption" sx={{ color: 'text.secondary' }}>
+                      Applied
+                    </Typography>
+                  </Box>
+                </Grid>
+                <Grid size={{ xs: 6, sm: 3 }}>
+                  <Box sx={{ textAlign: 'center' }}>
+                    <VideocamIcon sx={{ fontSize: 28, color: '#10B981', mb: 1 }} />
+                    <Typography variant="h5" sx={{ fontWeight: 700, color: '#10B981' }}>
+                      {stats.interviews}
+                    </Typography>
+                    <Typography variant="caption" sx={{ color: 'text.secondary' }}>
+                      Interviewing
+                    </Typography>
+                  </Box>
+                </Grid>
+                <Grid size={{ xs: 6, sm: 3 }}>
+                  <Box sx={{ textAlign: 'center' }}>
+                    <LocalOfferIcon sx={{ fontSize: 28, color: '#EC4899', mb: 1 }} />
+                    <Typography variant="h5" sx={{ fontWeight: 700, color: '#EC4899' }}>
+                      {stats.offers}
+                    </Typography>
+                    <Typography variant="caption" sx={{ color: 'text.secondary' }}>
+                      Offers
+                    </Typography>
+                  </Box>
+                </Grid>
+                <Grid size={{ xs: 6, sm: 3 }}>
+                  <Box sx={{ textAlign: 'center' }}>
+                    <TrendingUpIcon sx={{ fontSize: 28, color: '#06B6D4', mb: 1 }} />
+                    <Typography variant="h5" sx={{ fontWeight: 700, color: '#06B6D4' }}>
+                      {stats.applications > 0
+                        ? Math.round((stats.interviews / stats.applications) * 100)
+                        : 0}%
+                    </Typography>
+                    <Typography variant="caption" sx={{ color: 'text.secondary' }}>
+                      Interview Rate
+                    </Typography>
+                  </Box>
+                </Grid>
+              </Grid>
+
+              {/* Progress Bar */}
+              <Box sx={{ mt: 3 }}>
+                <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
+                  <Typography variant="body2" sx={{ color: 'text.secondary' }}>
+                    Application Funnel
+                  </Typography>
+                  <Typography variant="body2" sx={{ color: '#EC4899' }}>
+                    {stats.activeApps} active
+                  </Typography>
+                </Box>
+                <Box sx={{ display: 'flex', gap: 0.5, height: 8, borderRadius: 1, overflow: 'hidden' }}>
+                  <Box sx={{ flex: stats.applications, background: '#8B5CF6', borderRadius: 1 }} />
+                  <Box sx={{ flex: Math.max(stats.interviews, 0.1), background: '#10B981', borderRadius: 1 }} />
+                  <Box sx={{ flex: Math.max(stats.offers, 0.1), background: '#EC4899', borderRadius: 1 }} />
+                </Box>
+                <Box sx={{ display: 'flex', justifyContent: 'space-between', mt: 1 }}>
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                    <Box sx={{ width: 8, height: 8, borderRadius: '50%', background: '#8B5CF6' }} />
+                    <Typography variant="caption" sx={{ color: 'text.secondary' }}>Applied</Typography>
+                  </Box>
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                    <Box sx={{ width: 8, height: 8, borderRadius: '50%', background: '#10B981' }} />
+                    <Typography variant="caption" sx={{ color: 'text.secondary' }}>Interview</Typography>
+                  </Box>
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                    <Box sx={{ width: 8, height: 8, borderRadius: '50%', background: '#EC4899' }} />
+                    <Typography variant="caption" sx={{ color: 'text.secondary' }}>Offer</Typography>
+                  </Box>
+                </Box>
+              </Box>
+            </CardContent>
+          </Card>
+        </motion.div>
+      )}
 
       <Grid container spacing={3} sx={{ mb: 4 }}>
         <Grid size={{ xs: 12, md: 6 }}>

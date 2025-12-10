@@ -8,6 +8,8 @@ import {
   Chip,
   Grid,
   Badge,
+  Snackbar,
+  Alert,
 } from '@mui/material';
 import { motion, AnimatePresence } from 'framer-motion';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
@@ -27,6 +29,8 @@ import PriorityHighIcon from '@mui/icons-material/PriorityHigh';
 import LocalFireDepartmentIcon from '@mui/icons-material/LocalFireDepartment';
 import VerifiedUserIcon from '@mui/icons-material/VerifiedUser';
 import FavoriteIcon from '@mui/icons-material/Favorite';
+import SendIcon from '@mui/icons-material/Send';
+import TimelineIcon from '@mui/icons-material/Timeline';
 
 function ComparisonView({ onNavigate }) {
   const [resumes, setResumes] = useState([]);
@@ -35,6 +39,8 @@ function ComparisonView({ onNavigate }) {
   const [selectedJob, setSelectedJob] = useState(null);
   const [analysis, setAnalysis] = useState(null);
   const [topSkills, setTopSkills] = useState([]);
+  const [applications, setApplications] = useState([]);
+  const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' });
 
   useEffect(() => {
     loadData();
@@ -43,8 +49,10 @@ function ComparisonView({ onNavigate }) {
   const loadData = () => {
     const storedResumes = localStorage.getItem('app_resumes');
     const storedJobs = localStorage.getItem('app_jobs');
+    const storedApps = localStorage.getItem('app_applications');
 
     if (storedResumes) setResumes(JSON.parse(storedResumes));
+    if (storedApps) setApplications(JSON.parse(storedApps));
     if (storedJobs) {
       const parsedJobs = JSON.parse(storedJobs);
       setJobs(parsedJobs);
@@ -184,6 +192,45 @@ function ComparisonView({ onNavigate }) {
     if (score >= 60) return '#8B5CF6';
     if (score >= 40) return '#F59E0B';
     return '#EF4444';
+  };
+
+  // Check if job is already being tracked
+  const isJobTracked = (jobId) => {
+    return applications.some((app) => app.jobId === jobId);
+  };
+
+  // Track new application
+  const trackApplication = () => {
+    if (!selectedJob || !selectedResume) return;
+
+    if (isJobTracked(selectedJob.id)) {
+      setSnackbar({ open: true, message: 'This job is already being tracked!', severity: 'info' });
+      return;
+    }
+
+    const newApp = {
+      id: Date.now().toString(),
+      jobId: selectedJob.id,
+      resumeId: selectedResume.id,
+      status: 'applied',
+      appliedDate: Date.now(),
+      lastUpdated: Date.now(),
+      timeline: [
+        {
+          status: 'applied',
+          date: Date.now(),
+          notes: `Applied with ${analysis?.matchPercentage || 0}% match score`,
+        },
+      ],
+      nextAction: '',
+      nextActionDate: null,
+      isArchived: false,
+    };
+
+    const updatedApps = [...applications, newApp];
+    localStorage.setItem('app_applications', JSON.stringify(updatedApps));
+    setApplications(updatedApps);
+    setSnackbar({ open: true, message: 'Application tracked! View it in My Applications.', severity: 'success' });
   };
 
   return (
@@ -658,6 +705,54 @@ function ComparisonView({ onNavigate }) {
                     </Box>
                   </motion.div>
                 )}
+
+                {/* Track Application Button */}
+                <motion.div
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.7 }}
+                >
+                  <Box sx={{ mt: 4, pt: 3, borderTop: '1px solid rgba(255,255,255,0.1)', display: 'flex', gap: 2, flexWrap: 'wrap', alignItems: 'center' }}>
+                    {isJobTracked(selectedJob.id) ? (
+                      <Button
+                        variant="outlined"
+                        startIcon={<TimelineIcon />}
+                        onClick={() => onNavigate?.('applications')}
+                        sx={{
+                          borderColor: 'rgba(16, 185, 129, 0.5)',
+                          color: '#10B981',
+                          '&:hover': {
+                            borderColor: '#10B981',
+                            background: 'rgba(16, 185, 129, 0.1)',
+                          },
+                        }}
+                      >
+                        View in My Applications
+                      </Button>
+                    ) : (
+                      <Button
+                        variant="contained"
+                        startIcon={<SendIcon />}
+                        onClick={trackApplication}
+                        sx={{
+                          background: 'linear-gradient(135deg, #8B5CF6 0%, #06B6D4 100%)',
+                          px: 4,
+                          py: 1.5,
+                          '&:hover': {
+                            background: 'linear-gradient(135deg, #7C3AED 0%, #0891B2 100%)',
+                          },
+                        }}
+                      >
+                        I Applied - Track This Application
+                      </Button>
+                    )}
+                    <Typography variant="body2" sx={{ color: 'text.secondary' }}>
+                      {isJobTracked(selectedJob.id)
+                        ? 'This application is being tracked'
+                        : 'Track your application journey from submission to offer'}
+                    </Typography>
+                  </Box>
+                </motion.div>
               </CardContent>
             </Card>
 
@@ -919,6 +1014,22 @@ function ComparisonView({ onNavigate }) {
           </Card>
         </motion.div>
       )}
+
+      {/* Snackbar for notifications */}
+      <Snackbar
+        open={snackbar.open}
+        autoHideDuration={4000}
+        onClose={() => setSnackbar({ ...snackbar, open: false })}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+      >
+        <Alert
+          onClose={() => setSnackbar({ ...snackbar, open: false })}
+          severity={snackbar.severity}
+          sx={{ width: '100%' }}
+        >
+          {snackbar.message}
+        </Alert>
+      </Snackbar>
     </Box>
   );
 }
