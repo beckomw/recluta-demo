@@ -123,7 +123,7 @@ function HeroSection({ onGetStarted }) {
                 >
                   <AutoGraphIcon sx={{ fontSize: 18, color: 'primary.light' }} />
                   <Typography variant="body2" sx={{ fontWeight: 600, color: 'primary.light' }}>
-                    Free • No signup • Works instantly
+                    Free • No signup required
                   </Typography>
                 </Box>
               </motion.div>
@@ -165,8 +165,7 @@ function HeroSection({ onGetStarted }) {
                     fontWeight: 400,
                   }}
                 >
-                  See your match score before you spend hours tailoring your resume.
-                  Know exactly which skills you're missing — and which jobs are worth your time.
+                  Get your job match score instantly. See which skills you're missing and focus on roles where you'll compete.
                 </Typography>
               </motion.div>
 
@@ -198,7 +197,7 @@ function HeroSection({ onGetStarted }) {
                     </Button>
                   </motion.div>
                   <Typography variant="body2" sx={{ color: 'text.secondary' }}>
-                    No signup. No email. Just paste your skills and go.
+                    Paste your skills and go. Save progress anytime.
                   </Typography>
                   <Box
                     sx={{
@@ -210,7 +209,7 @@ function HeroSection({ onGetStarted }) {
                   >
                     <LockIcon sx={{ fontSize: 14, color: '#10B981' }} />
                     <Typography variant="caption" sx={{ color: 'text.secondary' }}>
-                      100% private — your data never leaves your browser
+                      Private — your data stays in your browser
                     </Typography>
                   </Box>
                 </Box>
