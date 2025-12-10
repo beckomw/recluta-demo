@@ -54,8 +54,8 @@ const benefits = [
   },
   {
     icon: TrendingUpIcon,
-    title: 'Fair chance Focused',
-    subtitle: 'Apply where the data says you have a fair chance',
+    title: 'Fair chance focused',
+    subtitle: 'Where your skills shine first',
     
   },
 ];
