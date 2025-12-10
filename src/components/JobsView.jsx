@@ -56,6 +56,7 @@ function JobsView({ onNavigate }) {
   });
   const [showFairChanceOnly, setShowFairChanceOnly] = useState(false);
   const [sortFairChanceFirst, setSortFairChanceFirst] = useState(false);
+  const [fairChanceAutoReason, setFairChanceAutoReason] = useState('');
   const [editId, setEditId] = useState(null);
   const [showForm, setShowForm] = useState(false);
   const [showAdvanced, setShowAdvanced] = useState(false);
@@ -95,46 +96,155 @@ function JobsView({ onNavigate }) {
   ];
 
   // Fair Chance employer industry keywords and known companies
+  // These industries are statistically more likely to hire candidates with records
   const fairChanceIndicators = {
-    industries: [
-      'construction', 'trades', 'food service', 'hospitality', 'restaurant',
-      'warehousing', 'warehouse', 'logistics', 'manufacturing', 'assembly',
-      'landscaping', 'janitorial', 'cleaning', 'maintenance', 'moving',
-      'delivery', 'driver', 'transportation', 'retail', 'grocery',
+    // High confidence industries - known for fair chance hiring
+    highConfidenceIndustries: [
+      'construction', 'general contractor', 'roofing', 'plumbing', 'electrical', 'hvac',
+      'carpentry', 'masonry', 'demolition', 'excavation', 'framing',
+      'hospitality', 'hotel', 'motel', 'resort', 'casino',
+      'restaurant', 'food service', 'kitchen', 'dishwasher', 'line cook', 'prep cook',
+      'warehouse', 'warehousing', 'fulfillment', 'distribution center',
+      'landscaping', 'lawn care', 'groundskeeper', 'grounds maintenance',
+      'janitorial', 'custodian', 'cleaning', 'housekeeping',
+      'moving', 'mover', 'relocation',
+      'trucking', 'cdl driver', 'truck driver', 'delivery driver',
+      'temp agency', 'staffing agency', 'day labor',
+    ],
+    // Medium confidence industries - often fair chance friendly
+    mediumConfidenceIndustries: [
+      'it support', 'tech support', 'help desk', 'computer repair',
+      'call center', 'customer service', 'telemarketing',
+      'manufacturing', 'assembly', 'production', 'factory',
+      'retail', 'grocery', 'supermarket', 'convenience store',
+      'automotive', 'mechanic', 'auto body', 'tire shop', 'oil change',
+      'recycling', 'waste management', 'sanitation',
+      'security guard', 'security officer',
+      'welding', 'welder', 'fabrication',
+      'painting', 'painter', 'drywall',
+      'flooring', 'tile', 'carpet installer',
+      'pest control', 'exterminator',
+      'solar installation', 'solar installer',
+      'cable installation', 'cable technician',
+    ],
+    // Job types that are fair chance friendly regardless of industry
+    fairChanceJobTypes: [
+      'entry level', 'entry-level', 'no experience', 'will train',
+      'immediate hire', 'urgent hire', 'hiring now', 'start immediately',
+      'forklift operator', 'forklift driver', 'material handler',
+      'package handler', 'picker', 'packer', 'sorter',
+      'laborer', 'general labor', 'helper',
     ],
     knownEmployers: [
       "dave's killer bread", 'greyston bakery', 'slack', 'jpm', 'jpmorgan',
       'jp morgan', 'target', 'walmart', 'home depot', 'koch industries',
       'unilever', 'starbucks', 'whole foods', 'uber', 'lyft',
+      'pepsico', 'coca-cola', 'coke', 'pepsi', 'frito-lay',
+      'tyson', 'jbs', 'smithfield', 'perdue',
+      'amazon', 'fedex', 'ups', 'dhl',
+      'sysco', 'us foods', 'aramark', 'sodexo',
+      'cintas', 'unifirst', 'grainger',
+      'waste management', 'republic services',
     ],
     keywords: [
       'fair chance', 'second chance', 'ban the box', 'background friendly',
       'felony friendly', 'reentry', 're-entry', 'justice impacted',
-      'formerly incarcerated', 'returning citizens',
+      'formerly incarcerated', 'returning citizens', 'fresh start',
+      'equal opportunity', 'we consider all qualified',
     ],
   };
 
   // Check if job/company might be a Fair Chance employer
-  const detectFairChanceHint = (job) => {
+  // Returns { likely: boolean, confidence: 'high'|'medium'|null, reason: string }
+  const detectFairChance = (job) => {
     const searchText = `${job.title} ${job.company} ${job.description || ''}`.toLowerCase();
 
-    // Check for explicit Fair Chance keywords
-    const hasExplicitKeyword = fairChanceIndicators.keywords.some(kw => searchText.includes(kw));
-    if (hasExplicitKeyword) return { likely: true, reason: 'Explicit Fair Chance language detected' };
+    // Check for explicit Fair Chance keywords - highest confidence
+    const matchedKeyword = fairChanceIndicators.keywords.find(kw => searchText.includes(kw));
+    if (matchedKeyword) {
+      return {
+        likely: true,
+        confidence: 'high',
+        reason: `Detected: "${matchedKeyword}" in job posting`
+      };
+    }
 
-    // Check for known Fair Chance employers
-    const isKnownEmployer = fairChanceIndicators.knownEmployers.some(emp =>
+    // Check for known Fair Chance employers - high confidence
+    const matchedEmployer = fairChanceIndicators.knownEmployers.find(emp =>
       searchText.includes(emp.toLowerCase())
     );
-    if (isKnownEmployer) return { likely: true, reason: 'Known Fair Chance employer' };
+    if (matchedEmployer) {
+      return {
+        likely: true,
+        confidence: 'high',
+        reason: `${matchedEmployer.charAt(0).toUpperCase() + matchedEmployer.slice(1)} is a known Fair Chance employer`
+      };
+    }
 
-    // Check for Fair Chance-friendly industries
-    const matchedIndustry = fairChanceIndicators.industries.find(ind =>
+    // Check for high confidence industries
+    const matchedHighIndustry = fairChanceIndicators.highConfidenceIndustries.find(ind =>
       searchText.includes(ind.toLowerCase())
     );
-    if (matchedIndustry) return { likely: true, reason: `${matchedIndustry.charAt(0).toUpperCase() + matchedIndustry.slice(1)} industry - often Fair Chance friendly` };
+    if (matchedHighIndustry) {
+      return {
+        likely: true,
+        confidence: 'high',
+        reason: `${matchedHighIndustry.charAt(0).toUpperCase() + matchedHighIndustry.slice(1)} - industry known for fair chance hiring`
+      };
+    }
 
-    return { likely: false, reason: null };
+    // Check for fair chance friendly job types
+    const matchedJobType = fairChanceIndicators.fairChanceJobTypes.find(jt =>
+      searchText.includes(jt.toLowerCase())
+    );
+    if (matchedJobType) {
+      return {
+        likely: true,
+        confidence: 'high',
+        reason: `${matchedJobType.charAt(0).toUpperCase() + matchedJobType.slice(1)} positions are typically fair chance friendly`
+      };
+    }
+
+    // Check for medium confidence industries
+    const matchedMediumIndustry = fairChanceIndicators.mediumConfidenceIndustries.find(ind =>
+      searchText.includes(ind.toLowerCase())
+    );
+    if (matchedMediumIndustry) {
+      return {
+        likely: true,
+        confidence: 'medium',
+        reason: `${matchedMediumIndustry.charAt(0).toUpperCase() + matchedMediumIndustry.slice(1)} - often fair chance friendly`
+      };
+    }
+
+    return { likely: false, confidence: null, reason: null };
+  };
+
+  // Legacy alias for backward compatibility
+  const detectFairChanceHint = detectFairChance;
+
+  // Auto-detect and apply Fair Chance status when job details change
+  const handleJobFieldChange = (field, value) => {
+    const updatedJob = { ...currentJob, [field]: value };
+
+    // Run detection on the updated job
+    const detection = detectFairChance(updatedJob);
+
+    // Auto-enable Fair Chance if detected (user can still toggle off)
+    if (detection.likely && !currentJob.isFairChance) {
+      updatedJob.isFairChance = true;
+      setFairChanceAutoReason(detection.reason);
+    } else if (!detection.likely && fairChanceAutoReason) {
+      // If no longer detected and it was auto-detected, turn off
+      // (only if user hasn't manually added notes, which indicates intent)
+      if (!currentJob.fairChanceNotes) {
+        updatedJob.isFairChance = false;
+        setFairChanceAutoReason('');
+      }
+    }
+
+    setCurrentJob(updatedJob);
+    return updatedJob;
   };
 
   // Extract skills from job description
@@ -172,10 +282,12 @@ function JobsView({ onNavigate }) {
     return Array.from(foundSkills);
   };
 
-  // Handle description change and extract skills
+  // Handle description change, extract skills, and auto-detect Fair Chance
   const handleDescriptionChange = (e) => {
     const newDescription = e.target.value;
-    setCurrentJob({ ...currentJob, description: newDescription });
+
+    // Use the auto-detection handler for description changes
+    handleJobFieldChange('description', newDescription);
 
     // Extract skills if description is long enough
     if (newDescription.length > 50) {
@@ -395,6 +507,8 @@ function JobsView({ onNavigate }) {
       isFairChance: false,
       fairChanceNotes: '',
     });
+    setFairChanceAutoReason('');
+    setExtractedSkills([]);
   };
 
   // Get filtered and sorted jobs
@@ -520,10 +634,10 @@ function JobsView({ onNavigate }) {
                         label="Job Title"
                         required
                         inputRef={firstFieldRef}
-                        placeholder="e.g., Senior Software Engineer"
+                        placeholder="e.g., Warehouse Associate, Construction Helper, Delivery Driver..."
                         value={currentJob.title}
                         onChange={(e) => {
-                          setCurrentJob({ ...currentJob, title: e.target.value });
+                          handleJobFieldChange('title', e.target.value);
                           if (errors.title) setErrors({ ...errors, title: '' });
                         }}
                         onBlur={() => validateField('title')}
@@ -536,10 +650,10 @@ function JobsView({ onNavigate }) {
                         fullWidth
                         label="Company"
                         required
-                        placeholder="e.g., Tech Corp Inc."
+                        placeholder="e.g., Amazon, Home Depot, Starbucks..."
                         value={currentJob.company}
                         onChange={(e) => {
-                          setCurrentJob({ ...currentJob, company: e.target.value });
+                          handleJobFieldChange('company', e.target.value);
                           if (errors.company) setErrors({ ...errors, company: '' });
                         }}
                         onBlur={() => validateField('company')}
@@ -618,6 +732,20 @@ function JobsView({ onNavigate }) {
                                 <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>
                                   Fair Chance Employer
                                 </Typography>
+                                {fairChanceAutoReason && currentJob.isFairChance && (
+                                  <Chip
+                                    size="small"
+                                    icon={<AutoAwesomeIcon sx={{ fontSize: 14 }} />}
+                                    label="Auto-detected"
+                                    sx={{
+                                      height: 20,
+                                      fontSize: '0.65rem',
+                                      background: 'rgba(16, 185, 129, 0.15)',
+                                      color: '#10B981',
+                                      '& .MuiChip-icon': { color: '#10B981' },
+                                    }}
+                                  />
+                                )}
                                 <Tooltip
                                   title="Fair Chance employers consider candidates with criminal records. They may have 'Ban the Box' policies, second-chance hiring programs, or other inclusive practices."
                                   arrow
@@ -626,63 +754,39 @@ function JobsView({ onNavigate }) {
                                   <InfoOutlinedIcon sx={{ fontSize: 16, color: 'text.secondary', cursor: 'help' }} />
                                 </Tooltip>
                               </Box>
-                              <Typography variant="caption" sx={{ color: 'text.secondary' }}>
-                                Mark this job as background-friendly
+                              <Typography variant="caption" sx={{ color: currentJob.isFairChance && fairChanceAutoReason ? '#10B981' : 'text.secondary' }}>
+                                {currentJob.isFairChance && fairChanceAutoReason
+                                  ? fairChanceAutoReason
+                                  : 'Auto-detected based on industry, job type, or employer'}
                               </Typography>
                             </Box>
                           </Box>
-                          <Switch
-                            checked={currentJob.isFairChance}
-                            onChange={(e) => setCurrentJob({ ...currentJob, isFairChance: e.target.checked })}
-                            sx={{
-                              '& .MuiSwitch-switchBase.Mui-checked': {
-                                color: '#10B981',
-                              },
-                              '& .MuiSwitch-switchBase.Mui-checked + .MuiSwitch-track': {
-                                backgroundColor: '#10B981',
-                              },
-                            }}
-                          />
+                          <Tooltip
+                            title={currentJob.isFairChance && fairChanceAutoReason
+                              ? "Auto-detected - toggle off if incorrect"
+                              : "Toggle on to mark as Fair Chance"
+                            }
+                            arrow
+                            placement="top"
+                          >
+                            <Switch
+                              checked={currentJob.isFairChance}
+                              onChange={(e) => {
+                                setCurrentJob({ ...currentJob, isFairChance: e.target.checked });
+                                // Clear auto-reason if user manually toggles off
+                                if (!e.target.checked) setFairChanceAutoReason('');
+                              }}
+                              sx={{
+                                '& .MuiSwitch-switchBase.Mui-checked': {
+                                  color: '#10B981',
+                                },
+                                '& .MuiSwitch-switchBase.Mui-checked + .MuiSwitch-track': {
+                                  backgroundColor: '#10B981',
+                                },
+                              }}
+                            />
+                          </Tooltip>
                         </Box>
-
-                        {/* Fair Chance Hint Detection */}
-                        {!currentJob.isFairChance && (currentJob.title || currentJob.company || currentJob.description) && (() => {
-                          const hint = detectFairChanceHint(currentJob);
-                          if (hint.likely) {
-                            return (
-                              <Box
-                                sx={{
-                                  mt: 2,
-                                  p: 1.5,
-                                  borderRadius: 1,
-                                  background: 'rgba(139, 92, 246, 0.1)',
-                                  border: '1px solid rgba(139, 92, 246, 0.2)',
-                                  display: 'flex',
-                                  alignItems: 'center',
-                                  gap: 1.5,
-                                }}
-                              >
-                                <AutoAwesomeIcon sx={{ color: 'primary.light', fontSize: 18 }} />
-                                <Box sx={{ flex: 1 }}>
-                                  <Typography variant="caption" sx={{ color: 'primary.light', fontWeight: 600 }}>
-                                    This might be a Fair Chance employer!
-                                  </Typography>
-                                  <Typography variant="caption" sx={{ color: 'text.secondary', display: 'block' }}>
-                                    {hint.reason}
-                                  </Typography>
-                                </Box>
-                                <Button
-                                  size="small"
-                                  onClick={() => setCurrentJob({ ...currentJob, isFairChance: true })}
-                                  sx={{ fontSize: '0.7rem', minWidth: 'auto' }}
-                                >
-                                  Mark as Fair Chance
-                                </Button>
-                              </Box>
-                            );
-                          }
-                          return null;
-                        })()}
 
                         {/* Fair Chance Notes (shown when enabled) */}
                         {currentJob.isFairChance && (
