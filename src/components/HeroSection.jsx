@@ -49,7 +49,7 @@ const benefits = [
   {
     icon: CheckCircleIcon,
     title: 'Skill Gap Detection',
-    subtitle: 'See what's missing and what to learn next',
+    subtitle: "See what's missing and what to learn next",
     color: '#06B6D4',
   },
   {
