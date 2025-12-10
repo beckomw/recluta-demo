@@ -42,20 +42,20 @@ const floatingVariants = {
 const benefits = [
   {
     icon: AccessTimeIcon,
-    title: 'Stop wasting time',
-    subtitle: 'Know before you apply',
+    title: 'Instant match score',
+    subtitle: 'See your fit in seconds',
     color: '#8B5CF6',
   },
   {
-    icon: TrendingUpIcon,
-    title: 'Apply to jobs you can win',
-    subtitle: 'Focus on realistic matches',
+    icon: CheckCircleIcon,
+    title: 'Skill gap analysis',
+    subtitle: "Know what's missing",
     color: '#06B6D4',
   },
   {
-    icon: CheckCircleIcon,
-    title: 'Build the right skills',
-    subtitle: 'See exactly what you need',
+    icon: TrendingUpIcon,
+    title: 'Smarter targeting',
+    subtitle: "Focus where you'll compete",
     color: '#10B981',
   },
 ];
@@ -245,19 +245,19 @@ function HeroSection({ onGetStarted }) {
                       <Box
                         component="span"
                         sx={{
-                          background: 'linear-gradient(135deg, #F59E0B 0%, #EF4444 100%)',
+                          background: 'linear-gradient(135deg, #8B5CF6 0%, #06B6D4 100%)',
                           WebkitBackgroundClip: 'text',
                           WebkitTextFillColor: 'transparent',
                         }}
                       >
-                        95%
+                        250+
                       </Box>
                     </Typography>
                     <Typography variant="body1" sx={{ color: 'text.secondary' }}>
-                      of job applications are wasted effort
+                      applicants per job posting
                     </Typography>
                     <Typography variant="caption" sx={{ color: 'text.secondary', display: 'block', mt: 1 }}>
-                      You're competing against people who actually match
+                      Stand out by applying where you fit
                     </Typography>
                   </Box>
 
