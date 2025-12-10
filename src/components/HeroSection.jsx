@@ -42,20 +42,20 @@ const floatingVariants = {
 const benefits = [
   {
     icon: AccessTimeIcon,
-    title: 'Competency Assessment',
-    subtitle: 'Rigorous analysis of your qualifications against role requirements',
+    title: 'Instant Fit Score',
+    subtitle: 'Know where you stand in seconds',
     color: '#8B5CF6',
   },
   {
     icon: CheckCircleIcon,
-    title: 'Gap Analysis & Growth Path',
-    subtitle: 'Identify skill gaps and receive targeted learning recommendations',
+    title: 'Skill Gap Detection',
+    subtitle: 'See what's missing and what to learn next',
     color: '#06B6D4',
   },
   {
     icon: TrendingUpIcon,
-    title: 'Evidence-Based Strategy',
-    subtitle: 'Apply strategically where your profile demonstrates strongest alignment',
+    title: 'Smart Targeting',
+    subtitle: 'Apply where the data says you compete',
     color: '#10B981',
   },
 ];
