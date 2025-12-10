@@ -81,7 +81,7 @@ Deploy to Vercel with `vercel` or push to any static host (Netlify, GitHub Pages
 
 | Feature | Description |
 |---------|-------------|
-| **Resume Profiles** | Create multiple resumes, upload PDFs for auto-extraction |
+| **Resume Profiles** | Create multiple resumes, upload PDFs for auto-extraction, download as PDF |
 | **Job Tracking** | Save postings with auto-extracted skill requirements |
 | **Match Analysis** | Fuzzy skill matching (React.js = React = ReactJS) |
 | **Gap Detection** | See exactly what you're missing for each role |
@@ -98,6 +98,7 @@ Deploy to Vercel with `vercel` or push to any static host (Netlify, GitHub Pages
 | Animations | Framer Motion |
 | Build | Vite |
 | PDF Parsing | PDF.js |
+| PDF Generation | jsPDF |
 | Storage | localStorage (100% client-side) |
 
 ## Project Structure
@@ -105,7 +106,7 @@ Deploy to Vercel with `vercel` or push to any static host (Netlify, GitHub Pages
 ```
 src/
 ├── components/
-│   ├── ResumeView.jsx          # Resume management + PDF parsing
+│   ├── ResumeView.jsx          # Resume management + PDF parsing/generation
 │   ├── JobsView.jsx            # Job tracking + skill extraction
 │   ├── ComparisonView.jsx      # Match analysis engine
 │   ├── ApplicationTrackerView.jsx  # Application pipeline
