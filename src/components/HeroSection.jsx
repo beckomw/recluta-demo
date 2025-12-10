@@ -138,7 +138,7 @@ function HeroSection({ onGetStarted }) {
                     mb: 3,
                   }}
                 >
-                  Match your skills to the right roles.{' '}
+                  Match skills.{' '}
                   <Box
                     component="span"
                     sx={{
@@ -149,7 +149,7 @@ function HeroSection({ onGetStarted }) {
                       animation: 'gradient-shift 5s ease infinite',
                     }}
                   >
-                    Land more interviews.
+                    Land interviews.
                   </Box>
                 </Typography>
               </motion.div>
