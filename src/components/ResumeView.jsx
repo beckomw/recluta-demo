@@ -33,7 +33,9 @@ import ContentCopyIcon from '@mui/icons-material/ContentCopy';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import BoltIcon from '@mui/icons-material/Bolt';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
+import DownloadIcon from '@mui/icons-material/Download';
 import * as pdfjsLib from 'pdfjs-dist';
+import { jsPDF } from 'jspdf';
 
 // Configure PDF.js worker - use the installed package worker (cdnjs doesn't have v5.x)
 pdfjsLib.GlobalWorkerOptions.workerSrc = new URL(
@@ -285,6 +287,94 @@ function ResumeView() {
       title: `${resume.title} (Copy)`,
     };
     saveResumes([...resumes, duplicatedResume]);
+  };
+
+  // Generate and download PDF from resume data
+  const handleDownloadPDF = (resume) => {
+    const doc = new jsPDF();
+    const pageWidth = doc.internal.pageSize.getWidth();
+    const margin = 20;
+    const contentWidth = pageWidth - margin * 2;
+    let y = 20;
+
+    // Helper to add wrapped text
+    const addWrappedText = (text, x, startY, maxWidth, lineHeight = 6) => {
+      const lines = doc.splitTextToSize(text, maxWidth);
+      lines.forEach((line) => {
+        if (startY > 270) {
+          doc.addPage();
+          startY = 20;
+        }
+        doc.text(line, x, startY);
+        startY += lineHeight;
+      });
+      return startY;
+    };
+
+    // Header - Name
+    const fullName = [resume.firstName, resume.lastName].filter(Boolean).join(' ') || 'Resume';
+    doc.setFontSize(24);
+    doc.setFont('helvetica', 'bold');
+    doc.text(fullName, pageWidth / 2, y, { align: 'center' });
+    y += 12;
+
+    // Contact info line
+    const contactParts = [];
+    if (resume.email) contactParts.push(resume.email);
+    if (resume.zipcode) contactParts.push(resume.zipcode);
+    if (contactParts.length > 0) {
+      doc.setFontSize(10);
+      doc.setFont('helvetica', 'normal');
+      doc.text(contactParts.join('  |  '), pageWidth / 2, y, { align: 'center' });
+      y += 10;
+    }
+
+    // Divider line
+    doc.setDrawColor(150);
+    doc.line(margin, y, pageWidth - margin, y);
+    y += 10;
+
+    // Summary section
+    if (resume.summary && resume.summary.trim()) {
+      doc.setFontSize(12);
+      doc.setFont('helvetica', 'bold');
+      doc.text('SUMMARY', margin, y);
+      y += 7;
+      doc.setFontSize(10);
+      doc.setFont('helvetica', 'normal');
+      y = addWrappedText(resume.summary.trim(), margin, y, contentWidth);
+      y += 6;
+    }
+
+    // Skills section
+    if (resume.skills && resume.skills.trim()) {
+      doc.setFontSize(12);
+      doc.setFont('helvetica', 'bold');
+      doc.text('SKILLS', margin, y);
+      y += 7;
+      doc.setFontSize(10);
+      doc.setFont('helvetica', 'normal');
+      y = addWrappedText(resume.skills.trim(), margin, y, contentWidth);
+      y += 6;
+    }
+
+    // Experience section
+    if (resume.experience && resume.experience.trim()) {
+      doc.setFontSize(12);
+      doc.setFont('helvetica', 'bold');
+      doc.text('EXPERIENCE', margin, y);
+      y += 7;
+      doc.setFontSize(10);
+      doc.setFont('helvetica', 'normal');
+      y = addWrappedText(resume.experience.trim(), margin, y, contentWidth);
+    }
+
+    // Generate filename
+    const fileName = fullName !== 'Resume'
+      ? `${fullName.replace(/\s+/g, '_')}_Resume.pdf`
+      : 'Resume.pdf';
+
+    doc.save(fileName);
   };
 
   // Extract text from PDF using PDF.js
@@ -1084,6 +1174,17 @@ function ResumeView() {
                           <DescriptionIcon sx={{ color: 'white' }} />
                         </Box>
                         <Box>
+                          <IconButton
+                            size="small"
+                            onClick={() => handleDownloadPDF(resume)}
+                            sx={{
+                              color: 'success.main',
+                              '&:hover': { background: 'rgba(16, 185, 129, 0.1)' },
+                            }}
+                            title="Download PDF"
+                          >
+                            <DownloadIcon fontSize="small" />
+                          </IconButton>
                           <IconButton
                             size="small"
                             onClick={() => handleDuplicate(resume)}
