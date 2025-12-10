@@ -42,20 +42,20 @@ const floatingVariants = {
 const benefits = [
   {
     icon: AccessTimeIcon,
-    title: 'Instant match score',
-    subtitle: 'See your fit in seconds',
+    title: 'Instant Fit Score',
+    subtitle: 'See in seconds whether this job is your job',
     color: '#8B5CF6',
   },
   {
     icon: CheckCircleIcon,
-    title: 'Skill gap analysis',
-    subtitle: "Know what's missing",
+    title: 'Skill Gaps, Exposed',
+    subtitle: "Know exactly what's missing — no fluff, no guessing",
     color: '#06B6D4',
   },
   {
     icon: TrendingUpIcon,
-    title: 'Smarter targeting',
-    subtitle: "Focus where you'll compete",
+    title: 'Smart Targeting',
+    subtitle: 'Ignore the noise and aim where you actually compete',
     color: '#10B981',
   },
 ];
@@ -165,7 +165,7 @@ function HeroSection({ onGetStarted }) {
                     fontWeight: 400,
                   }}
                 >
-                  Get your job match score instantly. See which skills you're missing and focus on roles where you'll compete.
+                  Stop spraying resumes into the void. Start applying where you actually win.
                 </Typography>
               </motion.div>
 
@@ -197,7 +197,7 @@ function HeroSection({ onGetStarted }) {
                     </Button>
                   </motion.div>
                   <Typography variant="body2" sx={{ color: 'text.secondary' }}>
-                    Paste your skills and go. Save progress anytime.
+                    One system. Zero chaos. Your scrappy resume command center.
                   </Typography>
                   <Box
                     sx={{
@@ -254,10 +254,10 @@ function HeroSection({ onGetStarted }) {
                       </Box>
                     </Typography>
                     <Typography variant="body1" sx={{ color: 'text.secondary' }}>
-                      applicants per job posting
+                      people apply. 1 gets noticed.
                     </Typography>
                     <Typography variant="caption" sx={{ color: 'text.secondary', display: 'block', mt: 1 }}>
-                      Stand out by applying where you fit
+                      We think that's broken.
                     </Typography>
                   </Box>
 
