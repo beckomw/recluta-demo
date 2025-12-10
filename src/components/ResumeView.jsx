@@ -34,7 +34,9 @@ import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import BoltIcon from '@mui/icons-material/Bolt';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import DownloadIcon from '@mui/icons-material/Download';
+import AutoAwesomeIcon from '@mui/icons-material/AutoAwesome';
 import * as pdfjsLib from 'pdfjs-dist';
+import AIEnhanceModal from './AIEnhanceModal';
 import { jsPDF } from 'jspdf';
 
 // Configure PDF.js worker - use the installed package worker (cdnjs doesn't have v5.x)
@@ -69,6 +71,7 @@ function ResumeView() {
   const [showAdvanced, setShowAdvanced] = useState(false);
   const [errors, setErrors] = useState({});
   const [deleteConfirm, setDeleteConfirm] = useState({ open: false, resume: null });
+  const [aiEnhanceModal, setAiEnhanceModal] = useState({ open: false, type: null });
   const firstFieldRef = useRef(null);
   const quickStartRef = useRef(null);
 
@@ -272,6 +275,32 @@ function ResumeView() {
 
   const handleDeleteCancel = () => {
     setDeleteConfirm({ open: false, resume: null });
+  };
+
+  // AI Enhancement handlers
+  const openAiEnhance = (type) => {
+    setAiEnhanceModal({ open: true, type });
+  };
+
+  const handleAiEnhanceAccept = (enhancedText) => {
+    const { type } = aiEnhanceModal;
+    if (type === 'summary' || type === 'generateSummary') {
+      setCurrentResume({ ...currentResume, summary: enhancedText });
+    } else if (type === 'experience') {
+      setCurrentResume({ ...currentResume, experience: enhancedText });
+    } else if (type === 'skills') {
+      setCurrentResume({ ...currentResume, skills: enhancedText });
+    }
+    setAiEnhanceModal({ open: false, type: null });
+  };
+
+  const getAiEnhanceOriginalText = () => {
+    const { type } = aiEnhanceModal;
+    if (type === 'summary') return currentResume.summary;
+    if (type === 'experience') return currentResume.experience;
+    if (type === 'skills') return currentResume.skills;
+    if (type === 'generateSummary') return currentResume.skills; // Used for context
+    return '';
   };
 
   const handleEdit = (resume) => {
@@ -979,22 +1008,45 @@ function ResumeView() {
                       onChange={(e) => setCurrentResume({ ...currentResume, title: e.target.value })}
                       sx={{ mb: 2 }}
                     />
-                    <TextField
-                      fullWidth
-                      multiline
-                      rows={2}
-                      label="Skills"
-                      required
-                      placeholder="JavaScript, React, Node.js, Python, SQL, AWS..."
-                      value={currentResume.skills}
-                      onChange={(e) => {
-                        setCurrentResume({ ...currentResume, skills: e.target.value });
-                        if (errors.skills) setErrors({ ...errors, skills: '' });
-                      }}
-                      onBlur={() => validateField('skills')}
-                      error={!!errors.skills}
-                      helperText={errors.skills || "Separate skills with commas - this is the key field for job matching"}
-                    />
+                    <Box sx={{ position: 'relative' }}>
+                      <TextField
+                        fullWidth
+                        multiline
+                        rows={2}
+                        label="Skills"
+                        required
+                        placeholder="JavaScript, React, Node.js, Python, SQL, AWS..."
+                        value={currentResume.skills}
+                        onChange={(e) => {
+                          setCurrentResume({ ...currentResume, skills: e.target.value });
+                          if (errors.skills) setErrors({ ...errors, skills: '' });
+                        }}
+                        onBlur={() => validateField('skills')}
+                        error={!!errors.skills}
+                        helperText={errors.skills || "Separate skills with commas - this is the key field for job matching"}
+                      />
+                      {currentResume.skills.trim() && (
+                        <Button
+                          size="small"
+                          startIcon={<AutoAwesomeIcon />}
+                          onClick={() => openAiEnhance('skills')}
+                          sx={{
+                            position: 'absolute',
+                            right: 8,
+                            top: 8,
+                            fontSize: '0.7rem',
+                            textTransform: 'none',
+                            background: 'rgba(139, 92, 246, 0.15)',
+                            color: 'primary.light',
+                            '&:hover': {
+                              background: 'rgba(139, 92, 246, 0.25)',
+                            },
+                          }}
+                        >
+                          Optimize
+                        </Button>
+                      )}
+                    </Box>
                     {/* Skills Chips Display */}
                     {getSkillsArray(currentResume.skills).length > 0 && (
                       <Box sx={{ mt: 1.5, display: 'flex', flexWrap: 'wrap', gap: 0.75 }}>
@@ -1043,25 +1095,86 @@ function ResumeView() {
                     </Button>
                     <Collapse in={showAdvanced}>
                       <Box sx={{ mt: 2 }}>
-                        <TextField
-                          fullWidth
-                          multiline
-                          rows={3}
-                          label="Professional Summary"
-                          placeholder="Brief overview of your professional background and goals (optional)"
-                          value={currentResume.summary}
-                          onChange={(e) => setCurrentResume({ ...currentResume, summary: e.target.value })}
-                          sx={{ mb: 2 }}
-                        />
-                        <TextField
-                          fullWidth
-                          multiline
-                          rows={4}
-                          label="Work Experience"
-                          placeholder="List your work experience, job titles, companies, and key responsibilities (optional)"
-                          value={currentResume.experience}
-                          onChange={(e) => setCurrentResume({ ...currentResume, experience: e.target.value })}
-                        />
+                        <Box sx={{ position: 'relative', mb: 2 }}>
+                          <TextField
+                            fullWidth
+                            multiline
+                            rows={3}
+                            label="Professional Summary"
+                            placeholder="Brief overview of your professional background and goals (optional)"
+                            value={currentResume.summary}
+                            onChange={(e) => setCurrentResume({ ...currentResume, summary: e.target.value })}
+                          />
+                          <Box sx={{ position: 'absolute', right: 8, top: 8, display: 'flex', gap: 0.5 }}>
+                            {currentResume.summary.trim() ? (
+                              <Button
+                                size="small"
+                                startIcon={<AutoAwesomeIcon />}
+                                onClick={() => openAiEnhance('summary')}
+                                sx={{
+                                  fontSize: '0.7rem',
+                                  textTransform: 'none',
+                                  background: 'rgba(139, 92, 246, 0.15)',
+                                  color: 'primary.light',
+                                  '&:hover': {
+                                    background: 'rgba(139, 92, 246, 0.25)',
+                                  },
+                                }}
+                              >
+                                Enhance
+                              </Button>
+                            ) : currentResume.skills.trim() && (
+                              <Button
+                                size="small"
+                                startIcon={<AutoAwesomeIcon />}
+                                onClick={() => openAiEnhance('generateSummary')}
+                                sx={{
+                                  fontSize: '0.7rem',
+                                  textTransform: 'none',
+                                  background: 'rgba(16, 185, 129, 0.15)',
+                                  color: 'success.light',
+                                  '&:hover': {
+                                    background: 'rgba(16, 185, 129, 0.25)',
+                                  },
+                                }}
+                              >
+                                Generate
+                              </Button>
+                            )}
+                          </Box>
+                        </Box>
+                        <Box sx={{ position: 'relative' }}>
+                          <TextField
+                            fullWidth
+                            multiline
+                            rows={4}
+                            label="Work Experience"
+                            placeholder="List your work experience, job titles, companies, and key responsibilities (optional)"
+                            value={currentResume.experience}
+                            onChange={(e) => setCurrentResume({ ...currentResume, experience: e.target.value })}
+                          />
+                          {currentResume.experience.trim() && (
+                            <Button
+                              size="small"
+                              startIcon={<AutoAwesomeIcon />}
+                              onClick={() => openAiEnhance('experience')}
+                              sx={{
+                                position: 'absolute',
+                                right: 8,
+                                top: 8,
+                                fontSize: '0.7rem',
+                                textTransform: 'none',
+                                background: 'rgba(139, 92, 246, 0.15)',
+                                color: 'primary.light',
+                                '&:hover': {
+                                  background: 'rgba(139, 92, 246, 0.25)',
+                                },
+                              }}
+                            >
+                              Enhance
+                            </Button>
+                          )}
+                        </Box>
                       </Box>
                     </Collapse>
                   </Box>
@@ -1303,6 +1416,19 @@ function ResumeView() {
           </Button>
         </DialogActions>
       </Dialog>
+
+      {/* AI Enhancement Modal */}
+      <AIEnhanceModal
+        open={aiEnhanceModal.open}
+        onClose={() => setAiEnhanceModal({ open: false, type: null })}
+        type={aiEnhanceModal.type}
+        originalText={getAiEnhanceOriginalText()}
+        onAccept={handleAiEnhanceAccept}
+        context={{
+          skills: currentResume.skills,
+          experience: currentResume.experience,
+        }}
+      />
     </Box>
   );
 }
