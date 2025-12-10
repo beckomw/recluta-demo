@@ -333,34 +333,6 @@ function JobsView({ onNavigate }) {
     let url = providedUrl;
     const skills = new Set();
 
-    // Extract URL from the text if not provided
-    if (!url) {
-      const urlPatterns = [
-        // LinkedIn job URLs
-        /https?:\/\/(?:www\.)?linkedin\.com\/jobs\/view\/[^\s]+/gi,
-        // Indeed job URLs
-        /https?:\/\/(?:www\.)?indeed\.com\/(?:viewjob|jobs)[^\s]+/gi,
-        // Glassdoor job URLs
-        /https?:\/\/(?:www\.)?glassdoor\.com\/job-listing[^\s]+/gi,
-        // ZipRecruiter job URLs
-        /https?:\/\/(?:www\.)?ziprecruiter\.com\/[^\s]+/gi,
-        // Monster job URLs
-        /https?:\/\/(?:www\.)?monster\.com\/[^\s]+/gi,
-        // Generic job board URLs
-        /https?:\/\/[^\s]+(?:job|career|position|apply)[^\s]*/gi,
-        // Any URL as fallback
-        /https?:\/\/[^\s]+/gi,
-      ];
-
-      for (const pattern of urlPatterns) {
-        const match = text.match(pattern);
-        if (match) {
-          url = match[0].replace(/[.,;:!?)]+$/, ''); // Clean trailing punctuation
-          break;
-        }
-      }
-    }
-
     // Try to extract job title (usually first meaningful line or after "Job Title:", "Position:")
     const titlePatterns = [
       /^(?:job\s*title|position|role)\s*[:\-]\s*(.+)/i,
@@ -511,7 +483,7 @@ function JobsView({ onNavigate }) {
 
   // Handle keyboard shortcut for Quick Add (Ctrl/Cmd + Enter)
   const handleQuickAddKeyDown = (e) => {
-    if ((e.ctrlKey || e.metaKey) && e.key === 'Enter' && quickAddText.trim().length >= 50) {
+    if ((e.ctrlKey || e.metaKey) && e.key === 'Enter' && quickAddText.trim().length >= 50 && quickAddUrl.trim()) {
       e.preventDefault();
       handleQuickAdd();
     }
@@ -570,7 +542,6 @@ function JobsView({ onNavigate }) {
       title: parsed.title || 'Untitled Position',
       company: parsed.company || 'Unknown Company',
       location: parsed.location || '',
-      url: parsed.url || quickAddUrl || '',
       skillCount: skills.length,
       skills: skills.slice(0, 5),
     };
@@ -1008,7 +979,7 @@ function JobsView({ onNavigate }) {
                   multiline
                   rows={6}
                   inputRef={quickAddRef}
-                  placeholder="Paste the entire job posting here... We'll automatically extract the title, company, skills, and URL."
+                  placeholder="Paste the entire job posting here... We'll automatically extract the title, company, and skills."
                   value={quickAddText}
                   onChange={(e) => setQuickAddText(e.target.value)}
                   onKeyDown={handleQuickAddKeyDown}
@@ -1028,11 +999,14 @@ function JobsView({ onNavigate }) {
 
                 <TextField
                   fullWidth
-                  label="Job URL (optional)"
-                  placeholder="https://linkedin.com/jobs/... or paste it in the description above"
+                  required
+                  label="Job URL"
+                  placeholder="https://linkedin.com/jobs/..."
                   value={quickAddUrl}
                   onChange={(e) => setQuickAddUrl(e.target.value)}
                   onKeyDown={handleQuickAddKeyDown}
+                  error={quickAddText.trim().length >= 50 && !quickAddUrl.trim()}
+                  helperText={quickAddText.trim().length >= 50 && !quickAddUrl.trim() ? "Job URL is required" : ""}
                   sx={{ mb: 3 }}
                   InputProps={{
                     startAdornment: <LinkIcon sx={{ color: 'text.secondary', mr: 1 }} />,
@@ -1083,11 +1057,6 @@ function JobsView({ onNavigate }) {
                             )}
                           </Box>
                         )}
-                        {quickAddPreview.url && (
-                          <Typography variant="caption" sx={{ color: 'text.secondary', mt: 0.5 }}>
-                            URL detected ✓
-                          </Typography>
-                        )}
                       </Box>
                     </Box>
                   </motion.div>
@@ -1108,7 +1077,7 @@ function JobsView({ onNavigate }) {
                       size="large"
                       startIcon={isParsing ? null : <BoltIcon />}
                       onClick={handleQuickAdd}
-                      disabled={quickAddText.trim().length < 50 || isParsing}
+                      disabled={quickAddText.trim().length < 50 || !quickAddUrl.trim() || isParsing}
                       sx={{
                         py: 1.5,
                         background: 'linear-gradient(135deg, #10B981 0%, #06B6D4 100%)',
