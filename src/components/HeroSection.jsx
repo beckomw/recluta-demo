@@ -55,7 +55,7 @@ const benefits = [
   {
     icon: TrendingUpIcon,
     title: 'Fair chance focused',
-    subtitle: 'Where your skills shine first',
+    subtitle: 'Skills-First Hiring lead the way',
     
   },
 ];
