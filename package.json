@@ -25,6 +25,7 @@
         "@mui/material": "^7.3.6",
         "@vitejs/plugin-react": "^5.1.2",
         "framer-motion": "^12.23.25",
+        "pdfjs-dist": "^5.4.449",
         "react": "^19.2.1",
         "react-dom": "^19.2.1",
         "vite": "^7.2.7"

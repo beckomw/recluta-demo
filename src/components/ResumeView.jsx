@@ -17,6 +17,7 @@ import {
   DialogContentText,
   DialogActions,
   Chip,
+  CircularProgress,
 } from '@mui/material';
 import { motion, AnimatePresence } from 'framer-motion';
 import CloudUploadIcon from '@mui/icons-material/CloudUpload';
@@ -32,6 +33,10 @@ import ContentCopyIcon from '@mui/icons-material/ContentCopy';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import BoltIcon from '@mui/icons-material/Bolt';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
+import * as pdfjsLib from 'pdfjs-dist';
+
+// Configure PDF.js worker
+pdfjsLib.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.js`;
 
 const cardVariants = {
   hidden: { opacity: 0, y: 20 },
@@ -51,6 +56,7 @@ function ResumeView() {
     experience: '',
   });
   const [pdfStatus, setPdfStatus] = useState('');
+  const [pdfProcessing, setPdfProcessing] = useState(false);
   const [editId, setEditId] = useState(null);
   const [showForm, setShowForm] = useState(false);
   const [showQuickStart, setShowQuickStart] = useState(false);
@@ -278,6 +284,143 @@ function ResumeView() {
     saveResumes([...resumes, duplicatedResume]);
   };
 
+  // Extract text from PDF using PDF.js
+  const extractTextFromPDF = async (file) => {
+    const arrayBuffer = await file.arrayBuffer();
+    const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+    let fullText = '';
+
+    for (let i = 1; i <= pdf.numPages; i++) {
+      const page = await pdf.getPage(i);
+      const textContent = await page.getTextContent();
+
+      // Build text with proper spacing
+      let lastY = null;
+      const pageLines = [];
+      let currentLine = '';
+
+      textContent.items.forEach(item => {
+        // Check if we're on a new line (Y position changed significantly)
+        if (lastY !== null && Math.abs(item.transform[5] - lastY) > 5) {
+          if (currentLine.trim()) {
+            pageLines.push(currentLine.trim());
+          }
+          currentLine = item.str;
+        } else {
+          // Same line, add space if needed
+          if (currentLine && !currentLine.endsWith(' ') && !item.str.startsWith(' ')) {
+            currentLine += ' ';
+          }
+          currentLine += item.str;
+        }
+        lastY = item.transform[5];
+      });
+
+      // Add last line
+      if (currentLine.trim()) {
+        pageLines.push(currentLine.trim());
+      }
+
+      fullText += pageLines.join('\n') + '\n\n';
+    }
+
+    return fullText;
+  };
+
+  // Parse PDF text and extract structured data
+  const parseResumeText = (text) => {
+    const extracted = {
+      firstName: '',
+      lastName: '',
+      email: '',
+      zipcode: '',
+      skills: '',
+      experience: '',
+      summary: '',
+    };
+
+    const lines = text.split('\n').filter(line => line.trim().length > 0);
+
+    // Extract name (usually first line or near top)
+    if (lines.length > 0) {
+      const firstLine = lines[0].trim();
+      // Name should be short (under 50 chars), 2-3 words, capitalized
+      // Improved pattern to handle more name formats
+      const namePattern = /^[A-Z][a-zA-Z'-]+\s+[A-Z][a-zA-Z'-]+(\s+[A-Z][a-zA-Z'-]+)?$/;
+      if (firstLine.length < 50 && namePattern.test(firstLine)) {
+        const nameParts = firstLine.split(/\s+/);
+        if (nameParts.length >= 2) {
+          extracted.firstName = nameParts[0];
+          extracted.lastName = nameParts.slice(1).join(' ');
+        }
+      }
+    }
+
+    // Extract email
+    const emailMatch = text.match(/[\w.-]+@[\w.-]+\.\w+/);
+    if (emailMatch) {
+      extracted.email = emailMatch[0];
+    }
+
+    // Extract zipcode (5-digit US format)
+    const zipcodeMatch = text.match(/\b\d{5}(?:-\d{4})?\b/);
+    if (zipcodeMatch) {
+      extracted.zipcode = zipcodeMatch[0].substring(0, 5); // Use first 5 digits
+    }
+
+    // Extract skills - comprehensive approach
+    let extractedSkills = [];
+
+    // Pattern 1: Look for skills section headers
+    const skillsSectionMatch = text.match(
+      /(?:Languages?\s*&?\s*More|Skills?|Technologies?|Technical Skills?|Core Competencies|Expertise):\s*([^\n]+(?:\n[^\n]+)*?)(?=\n[A-Z][A-Z\s]+:|EXPERIENCE|EDUCATION|WORK|$)/i
+    );
+    if (skillsSectionMatch) {
+      const skillsText = skillsSectionMatch[1];
+      const skills = skillsText
+        .split(/[,•|\/\n]/)
+        .map(s => s.trim())
+        .filter(s => s.length > 0 && s.length < 50);
+      extractedSkills.push(...skills);
+    }
+
+    // Pattern 2: Common tech keywords in text
+    const techKeywords = [
+      'Python', 'JavaScript', 'TypeScript', 'Java', 'C\\+\\+', 'C#', 'PHP', 'Ruby', 'Go', 'Rust', 'Swift', 'Kotlin', 'Scala',
+      'React', 'Angular', 'Vue', 'Next\\.?js', 'Node\\.?js', 'Express', 'Django', 'Flask', 'FastAPI', 'Spring', 'Laravel',
+      'HTML', 'CSS', 'SCSS', 'Sass', 'Tailwind', 'Bootstrap', 'Material UI', 'MUI',
+      'PostgreSQL', 'MySQL', 'MongoDB', 'Redis', 'Elasticsearch', 'DynamoDB', 'Firebase', 'Supabase',
+      'AWS', 'Azure', 'GCP', 'Google Cloud', 'Docker', 'Kubernetes', 'Jenkins', 'Terraform', 'Ansible',
+      'Git', 'GitHub', 'GitLab', 'Bitbucket', 'CI/CD', 'DevOps',
+      'Linux', 'Ubuntu', 'Debian', 'Unix', 'Windows Server',
+      'Blender', 'Photoshop', 'Illustrator', 'Figma', 'Sketch', 'Adobe XD',
+      'Salesforce', 'Tableau', 'Power BI', 'Excel', 'Jira', 'Confluence',
+      'Machine Learning', 'Deep Learning', 'TensorFlow', 'PyTorch', 'Pandas', 'NumPy', 'Scikit-learn',
+      'GraphQL', 'REST', 'API', 'Microservices', 'Agile', 'Scrum'
+    ];
+
+    const keywordPattern = new RegExp(`\\b(${techKeywords.join('|')})\\b`, 'gi');
+    const foundKeywords = text.match(keywordPattern) || [];
+    const uniqueKeywords = [...new Set(foundKeywords.map(k => k.trim()))];
+    extractedSkills.push(...uniqueKeywords);
+
+    // Deduplicate all skills (case-insensitive)
+    const seenLower = new Set();
+    extractedSkills = extractedSkills.filter(s => {
+      const lower = s.toLowerCase();
+      if (seenLower.has(lower) || s.length <= 1) return false;
+      seenLower.add(lower);
+      return true;
+    });
+
+    extracted.skills = extractedSkills.join(', ');
+
+    // Store full text as experience for reference
+    extracted.experience = text.trim();
+
+    return extracted;
+  };
+
   const handlePdfUpload = async (e) => {
     const file = e.target.files[0];
     if (!file) return;
@@ -287,8 +430,43 @@ function ResumeView() {
       return;
     }
 
-    setPdfStatus('PDF parsing coming soon! For now, please enter your details manually.');
-    setShowForm(true);
+    // Check file size (max 10MB)
+    if (file.size > 10 * 1024 * 1024) {
+      setPdfStatus('File is too large. Please upload a PDF under 10MB.');
+      return;
+    }
+
+    setPdfProcessing(true);
+    setPdfStatus('Processing PDF...');
+
+    try {
+      const text = await extractTextFromPDF(file);
+      const extracted = parseResumeText(text);
+
+      // Pre-fill the form with extracted data
+      setCurrentResume({
+        ...currentResume,
+        firstName: extracted.firstName || currentResume.firstName,
+        lastName: extracted.lastName || currentResume.lastName,
+        email: extracted.email || currentResume.email,
+        zipcode: extracted.zipcode || currentResume.zipcode,
+        skills: extracted.skills || currentResume.skills,
+        experience: extracted.experience || currentResume.experience,
+        title: 'Resume from PDF',
+      });
+
+      setPdfStatus(`PDF processed successfully! Found ${extracted.skills.split(',').filter(s => s.trim()).length} skills. Review and edit below.`);
+      setShowForm(true);
+      setShowAdvanced(true); // Show advanced section so user can see experience
+      setErrors({});
+    } catch (error) {
+      console.error('PDF processing error:', error);
+      setPdfStatus('Error processing PDF. Please try again or enter details manually.');
+    } finally {
+      setPdfProcessing(false);
+      // Reset file input so same file can be re-uploaded
+      e.target.value = '';
+    }
   };
 
   return (
@@ -488,44 +666,92 @@ function ResumeView() {
         )}
       </AnimatePresence>
 
-      {/* PDF Upload - Future Feature (de-emphasized) */}
-      {resumes.length > 0 && !showForm && !showQuickStart && (
+      {/* PDF Upload - Working Feature */}
+      {!showForm && !showQuickStart && (
         <motion.div variants={cardVariants} initial="hidden" animate="visible">
-          <Box sx={{ mb: 3, opacity: 0.6 }}>
-            <input
-              accept=".pdf"
-              style={{ display: 'none' }}
-              id="resume-pdf-upload"
-              type="file"
-              onChange={handlePdfUpload}
-            />
-            <label htmlFor="resume-pdf-upload">
-              <Box
-                sx={{
-                  p: 2,
-                  borderRadius: 2,
-                  border: '1px dashed rgba(255, 255, 255, 0.2)',
-                  background: 'rgba(255, 255, 255, 0.02)',
-                  textAlign: 'center',
-                  cursor: 'not-allowed',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  gap: 1.5,
-                }}
-              >
-                <CloudUploadIcon sx={{ fontSize: 20, color: 'text.secondary' }} />
-                <Typography variant="body2" sx={{ color: 'text.secondary' }}>
-                  PDF upload coming soon
-                </Typography>
-              </Box>
-            </label>
-            {pdfStatus && (
-              <Alert severity="info" sx={{ mt: 2, borderRadius: 2 }}>
-                {pdfStatus}
-              </Alert>
-            )}
-          </Box>
+          <Card
+            sx={{
+              mb: 3,
+              background: 'linear-gradient(135deg, rgba(139, 92, 246, 0.1) 0%, rgba(15, 15, 35, 0.95) 100%)',
+              border: '2px dashed rgba(139, 92, 246, 0.3)',
+              transition: 'all 0.3s ease',
+              '&:hover': {
+                border: '2px dashed rgba(139, 92, 246, 0.6)',
+                boxShadow: '0 4px 20px rgba(139, 92, 246, 0.15)',
+              },
+            }}
+          >
+            <CardContent sx={{ p: 3 }}>
+              <input
+                accept=".pdf"
+                style={{ display: 'none' }}
+                id="resume-pdf-upload"
+                type="file"
+                onChange={handlePdfUpload}
+                disabled={pdfProcessing}
+              />
+              <label htmlFor="resume-pdf-upload" style={{ cursor: pdfProcessing ? 'wait' : 'pointer' }}>
+                <Box
+                  sx={{
+                    p: 3,
+                    textAlign: 'center',
+                    cursor: pdfProcessing ? 'wait' : 'pointer',
+                  }}
+                >
+                  {pdfProcessing ? (
+                    <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2 }}>
+                      <CircularProgress size={48} sx={{ color: 'primary.main' }} />
+                      <Typography variant="body1" sx={{ color: 'primary.light' }}>
+                        Processing your resume...
+                      </Typography>
+                    </Box>
+                  ) : (
+                    <>
+                      <motion.div
+                        whileHover={{ scale: 1.05 }}
+                        whileTap={{ scale: 0.95 }}
+                      >
+                        <Box
+                          sx={{
+                            width: 64,
+                            height: 64,
+                            borderRadius: '50%',
+                            background: 'linear-gradient(135deg, #8B5CF6 0%, #06B6D4 100%)',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            mx: 'auto',
+                            mb: 2,
+                            boxShadow: '0 4px 20px rgba(139, 92, 246, 0.3)',
+                          }}
+                        >
+                          <CloudUploadIcon sx={{ fontSize: 32, color: 'white' }} />
+                        </Box>
+                      </motion.div>
+                      <Typography variant="h6" sx={{ fontWeight: 600, mb: 1 }}>
+                        Upload Your Resume
+                      </Typography>
+                      <Typography variant="body2" sx={{ color: 'text.secondary', mb: 1 }}>
+                        Drop a PDF here or click to browse
+                      </Typography>
+                      <Typography variant="caption" sx={{ color: 'text.secondary' }}>
+                        We'll automatically extract your skills, contact info, and experience
+                      </Typography>
+                    </>
+                  )}
+                </Box>
+              </label>
+            </CardContent>
+          </Card>
+          {pdfStatus && (
+            <Alert
+              severity={pdfStatus.includes('Error') ? 'error' : pdfStatus.includes('success') ? 'success' : 'info'}
+              sx={{ mb: 3, borderRadius: 2 }}
+              onClose={() => setPdfStatus('')}
+            >
+              {pdfStatus}
+            </Alert>
+          )}
         </motion.div>
       )}
 
