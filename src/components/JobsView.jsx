@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import {
   Box,
   Card,
@@ -18,9 +18,9 @@ import {
   FormControlLabel,
   Switch,
   Tooltip,
-  FormGroup,
   ToggleButton,
   ToggleButtonGroup,
+  Alert,
 } from '@mui/material';
 import { motion, AnimatePresence } from 'framer-motion';
 import DeleteIcon from '@mui/icons-material/Delete';
@@ -40,11 +40,10 @@ import HelpOutlineIcon from '@mui/icons-material/HelpOutline';
 import TrendingUpIcon from '@mui/icons-material/TrendingUp';
 import AutoAwesomeIcon from '@mui/icons-material/AutoAwesome';
 import VerifiedUserIcon from '@mui/icons-material/VerifiedUser';
-import FilterListIcon from '@mui/icons-material/FilterList';
-import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
 import SortIcon from '@mui/icons-material/Sort';
 import BoltIcon from '@mui/icons-material/Bolt';
 import ContentPasteIcon from '@mui/icons-material/ContentPaste';
+import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 
 function JobsView({ onNavigate }) {
   const [jobs, setJobs] = useState([]);
@@ -78,6 +77,7 @@ function JobsView({ onNavigate }) {
   const [quickAddText, setQuickAddText] = useState('');
   const [quickAddUrl, setQuickAddUrl] = useState('');
   const [sortBy, setSortBy] = useState('date'); // 'date', 'score', 'company'
+  const [successMessage, setSuccessMessage] = useState('');
   const quickAddRef = useRef(null);
 
   // Common tech skills to look for in job descriptions
@@ -233,9 +233,6 @@ function JobsView({ onNavigate }) {
 
     return { likely: false, confidence: null, reason: null };
   };
-
-  // Legacy alias for backward compatibility
-  const detectFairChanceHint = detectFairChance;
 
   // Auto-detect and apply Fair Chance status when job details change
   const handleJobFieldChange = (field, value) => {
@@ -501,11 +498,23 @@ function JobsView({ onNavigate }) {
     // Save the job
     saveJobs([...jobs, newJob]);
 
+    // Show success message
+    setSuccessMessage(`Added "${newJob.title}" at ${newJob.company}`);
+    setTimeout(() => setSuccessMessage(''), 4000);
+
     // Reset quick add
     setQuickAddText('');
     setQuickAddUrl('');
     setShowQuickAdd(false);
     setIsParsing(false);
+  };
+
+  // Handle keyboard shortcut for Quick Add (Ctrl/Cmd + Enter)
+  const handleQuickAddKeyDown = (e) => {
+    if ((e.ctrlKey || e.metaKey) && e.key === 'Enter' && quickAddText.trim().length >= 50) {
+      e.preventDefault();
+      handleQuickAdd();
+    }
   };
 
   // Auto-focus quick add input
@@ -551,6 +560,22 @@ function JobsView({ onNavigate }) {
 
     return cleaned;
   };
+
+  // Memoized preview of what will be extracted from Quick Add text
+  const quickAddPreview = useMemo(() => {
+    if (quickAddText.length < 50) return null;
+    const parsed = parseJobPosting(quickAddText, quickAddUrl);
+    const skills = extractSkillsFromDescription(quickAddText);
+    return {
+      title: parsed.title || 'Untitled Position',
+      company: parsed.company || 'Unknown Company',
+      location: parsed.location || '',
+      url: parsed.url || quickAddUrl || '',
+      skillCount: skills.length,
+      skills: skills.slice(0, 5),
+    };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [quickAddText, quickAddUrl]);
 
   // Handle parsing the pasted job text
   const handleParseJobPosting = () => {
@@ -900,6 +925,31 @@ function JobsView({ onNavigate }) {
         </Box>
       </motion.div>
 
+      {/* Success Message */}
+      <AnimatePresence>
+        {successMessage && (
+          <motion.div
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -20 }}
+          >
+            <Alert
+              icon={<CheckCircleIcon />}
+              severity="success"
+              onClose={() => setSuccessMessage('')}
+              sx={{
+                mb: 3,
+                background: 'linear-gradient(135deg, rgba(16, 185, 129, 0.15) 0%, rgba(6, 182, 212, 0.1) 100%)',
+                border: '1px solid rgba(16, 185, 129, 0.3)',
+                '& .MuiAlert-icon': { color: '#10B981' },
+              }}
+            >
+              {successMessage}
+            </Alert>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       {/* QUICK ADD MODE - One paste to add */}
       <AnimatePresence>
         {showQuickAdd && (
@@ -961,6 +1011,7 @@ function JobsView({ onNavigate }) {
                   placeholder="Paste the entire job posting here... We'll automatically extract the title, company, skills, and URL."
                   value={quickAddText}
                   onChange={(e) => setQuickAddText(e.target.value)}
+                  onKeyDown={handleQuickAddKeyDown}
                   sx={{
                     mb: 2,
                     '& .MuiOutlinedInput-root': {
@@ -981,24 +1032,72 @@ function JobsView({ onNavigate }) {
                   placeholder="https://linkedin.com/jobs/... or paste it in the description above"
                   value={quickAddUrl}
                   onChange={(e) => setQuickAddUrl(e.target.value)}
+                  onKeyDown={handleQuickAddKeyDown}
                   sx={{ mb: 3 }}
                   InputProps={{
                     startAdornment: <LinkIcon sx={{ color: 'text.secondary', mr: 1 }} />,
                   }}
                 />
 
-                {quickAddText.length > 50 && (
+                {/* Preview of what will be extracted */}
+                {quickAddPreview && (
                   <motion.div
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
                   >
-                    <Box sx={{ mb: 3, p: 2, borderRadius: 2, background: 'rgba(16, 185, 129, 0.1)' }}>
-                      <Typography variant="body2" sx={{ color: 'success.light', display: 'flex', alignItems: 'center', gap: 1 }}>
+                    <Box sx={{ mb: 3, p: 2, borderRadius: 2, background: 'rgba(16, 185, 129, 0.1)', border: '1px solid rgba(16, 185, 129, 0.2)' }}>
+                      <Typography variant="subtitle2" sx={{ color: 'success.light', display: 'flex', alignItems: 'center', gap: 1, mb: 1.5 }}>
                         <AutoAwesomeIcon sx={{ fontSize: 18 }} />
-                        {extractSkillsFromDescription(quickAddText).length} skills detected - Ready to add!
+                        Preview - We'll add this:
                       </Typography>
+                      <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
+                        <Typography variant="body2" sx={{ fontWeight: 600 }}>
+                          {quickAddPreview.title}
+                        </Typography>
+                        <Typography variant="body2" sx={{ color: 'text.secondary' }}>
+                          at {quickAddPreview.company}
+                          {quickAddPreview.location && ` • ${quickAddPreview.location}`}
+                        </Typography>
+                        {quickAddPreview.skillCount > 0 && (
+                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mt: 1, flexWrap: 'wrap' }}>
+                            <Typography variant="caption" sx={{ color: 'text.secondary' }}>
+                              Skills:
+                            </Typography>
+                            {quickAddPreview.skills.map((skill, i) => (
+                              <Chip
+                                key={i}
+                                label={skill}
+                                size="small"
+                                sx={{
+                                  height: 20,
+                                  fontSize: '0.65rem',
+                                  background: 'rgba(16, 185, 129, 0.2)',
+                                  color: 'success.light',
+                                }}
+                              />
+                            ))}
+                            {quickAddPreview.skillCount > 5 && (
+                              <Typography variant="caption" sx={{ color: 'success.light' }}>
+                                +{quickAddPreview.skillCount - 5} more
+                              </Typography>
+                            )}
+                          </Box>
+                        )}
+                        {quickAddPreview.url && (
+                          <Typography variant="caption" sx={{ color: 'text.secondary', mt: 0.5 }}>
+                            URL detected ✓
+                          </Typography>
+                        )}
+                      </Box>
                     </Box>
                   </motion.div>
+                )}
+
+                {/* Warning if no skills detected */}
+                {quickAddText.length >= 50 && quickAddPreview?.skillCount === 0 && (
+                  <Alert severity="warning" sx={{ mb: 2, background: 'rgba(245, 158, 11, 0.1)' }}>
+                    No skills detected. You can still add this job and edit the skills later.
+                  </Alert>
                 )}
 
                 <Box sx={{ display: 'flex', gap: 2 }}>
@@ -1027,7 +1126,7 @@ function JobsView({ onNavigate }) {
                 </Box>
 
                 <Typography variant="body2" sx={{ color: 'text.secondary', mt: 2, textAlign: 'center' }}>
-                  You can edit the details after adding
+                  Press <kbd style={{ padding: '2px 6px', background: 'rgba(255,255,255,0.1)', borderRadius: '4px', fontSize: '0.75rem' }}>Ctrl+Enter</kbd> to add quickly • You can edit the details after adding
                 </Typography>
               </CardContent>
             </Card>
