@@ -54,9 +54,9 @@ const benefits = [
   },
   {
     icon: TrendingUpIcon,
-    title: 'Smart Targeting',
-    subtitle: 'Apply where the data says you compete',
-    color: '#10B981',
+    title: 'Fair chance Focused',
+    subtitle: 'Apply where the data says you have a fair chance',
+    
   },
 ];
 
