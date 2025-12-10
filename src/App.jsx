@@ -5,6 +5,7 @@ import DescriptionIcon from '@mui/icons-material/Description';
 import WorkIcon from '@mui/icons-material/Work';
 import CompareArrowsIcon from '@mui/icons-material/CompareArrows';
 import DashboardIcon from '@mui/icons-material/Dashboard';
+import TimelineIcon from '@mui/icons-material/Timeline';
 import CloseIcon from '@mui/icons-material/Close';
 import Header from './components/Header';
 import HeroSection from './components/HeroSection';
@@ -12,12 +13,15 @@ import ResumeView from './components/ResumeView';
 import JobsView from './components/JobsView';
 import ComparisonView from './components/ComparisonView';
 import DashboardView from './components/DashboardView';
+import ApplicationTrackerView from './components/ApplicationTrackerView';
 import Footer from './components/Footer';
 
 const navItems = [
   { id: 'resume', label: 'My Profile', icon: DescriptionIcon },
   { id: 'jobs', label: 'Track Jobs', icon: WorkIcon },
   { id: 'comparison', label: 'Compare & Insights', icon: CompareArrowsIcon },
+  { id: 'applications', label: 'My Applications', icon: TimelineIcon },
+  { id: 'dashboard', label: 'Dashboard', icon: DashboardIcon },
 ];
 
 function App() {
@@ -192,6 +196,8 @@ function App() {
                 {currentView === 'resume' && <ResumeView />}
                 {currentView === 'jobs' && <JobsView onNavigate={setCurrentView} />}
                 {currentView === 'comparison' && <ComparisonView onNavigate={setCurrentView} />}
+                {currentView === 'applications' && <ApplicationTrackerView onNavigate={setCurrentView} />}
+                {currentView === 'dashboard' && <DashboardView onNavigate={setCurrentView} />}
               </motion.div>
             </AnimatePresence>
           </Container>
