@@ -4,7 +4,7 @@ import { motion } from 'framer-motion';
 import StorageIcon from '@mui/icons-material/Storage';
 import CloudOffIcon from '@mui/icons-material/CloudOff';
 import VisibilityOffIcon from '@mui/icons-material/VisibilityOff';
-import PersonOffIcon from '@mui/icons-material/PersonOff';
+import EmailIcon from '@mui/icons-material/Email';
 import CodeIcon from '@mui/icons-material/Code';
 import DeleteForeverIcon from '@mui/icons-material/DeleteForever';
 import SecurityIcon from '@mui/icons-material/Security';
@@ -45,9 +45,9 @@ const privacyFeatures = [
     color: '#10B981',
   },
   {
-    icon: PersonOffIcon,
-    title: 'No Accounts or Login',
-    description: 'No email required. No passwords. No user profiles on our end. You stay completely anonymous.',
+    icon: EmailIcon,
+    title: 'Newsletter Only',
+    description: 'The only data we collect is your email—if you choose to subscribe—to notify you of product updates and new features. Nothing else.',
     color: '#F59E0B',
   },
   {
