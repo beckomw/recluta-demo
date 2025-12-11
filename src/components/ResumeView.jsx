@@ -37,6 +37,7 @@ import DownloadIcon from '@mui/icons-material/Download';
 import AutoAwesomeIcon from '@mui/icons-material/AutoAwesome';
 import * as pdfjsLib from 'pdfjs-dist';
 import AIEnhanceModal from './AIEnhanceModal';
+import DataSyncBanner from './DataSyncBanner';
 import { jsPDF } from 'jspdf';
 
 // Configure PDF.js worker - use the installed package worker (cdnjs doesn't have v5.x)
@@ -607,6 +608,11 @@ function ResumeView() {
           </Typography>
         </Box>
       </motion.div>
+
+      {/* Data Sync Banner - show when user has data */}
+      {resumes.length > 0 && (
+        <DataSyncBanner onDataChange={() => setResumes(JSON.parse(localStorage.getItem('app_resumes') || '[]'))} />
+      )}
 
       {/* QUICK START - The "Excalidraw" Experience */}
       {resumes.length === 0 && !showForm && !showQuickStart && (
