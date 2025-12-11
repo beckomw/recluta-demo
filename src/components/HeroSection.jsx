@@ -1,5 +1,5 @@
 import React from 'react';
-import { Box, Container, Typography, Button, Grid } from '@mui/material';
+import { Box, Container, Typography, Button, Grid, Chip } from '@mui/material';
 import { motion } from 'framer-motion';
 import RocketLaunchIcon from '@mui/icons-material/RocketLaunch';
 import AccessTimeIcon from '@mui/icons-material/AccessTime';
@@ -7,6 +7,7 @@ import TrendingUpIcon from '@mui/icons-material/TrendingUp';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import AutoGraphIcon from '@mui/icons-material/AutoGraph';
 import LockIcon from '@mui/icons-material/Lock';
+import SecurityIcon from '@mui/icons-material/Security';
 
 const containerVariants = {
   hidden: { opacity: 0 },
@@ -199,19 +200,28 @@ function HeroSection({ onGetStarted }) {
                   <Typography variant="body2" sx={{ color: 'text.secondary' }}>
                     Structured analysis to guide your professional development
                   </Typography>
-                  <Box
-                    sx={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: 0.75,
-                      mt: 1,
-                    }}
+                  <motion.div
+                    whileHover={{ scale: 1.02 }}
+                    style={{ display: 'inline-block', marginTop: '8px' }}
                   >
-                    <LockIcon sx={{ fontSize: 14, color: '#10B981' }} />
-                    <Typography variant="caption" sx={{ color: 'text.secondary' }}>
-                      Private — your data stays in your browser
-                    </Typography>
-                  </Box>
+                    <Chip
+                      icon={<SecurityIcon sx={{ fontSize: 14 }} />}
+                      label="Privacy-First by Design"
+                      size="small"
+                      sx={{
+                        background: 'linear-gradient(135deg, rgba(16, 185, 129, 0.15) 0%, rgba(6, 182, 212, 0.15) 100%)',
+                        border: '1px solid rgba(16, 185, 129, 0.3)',
+                        color: '#10B981',
+                        fontWeight: 500,
+                        fontSize: '0.75rem',
+                        '& .MuiChip-icon': { color: '#10B981' },
+                        cursor: 'default',
+                      }}
+                    />
+                  </motion.div>
+                  <Typography variant="caption" sx={{ color: 'text.secondary', display: 'block', mt: 1 }}>
+                    No servers • No tracking • Data stays in your browser
+                  </Typography>
                 </Box>
               </motion.div>
             </Grid>

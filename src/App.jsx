@@ -14,6 +14,7 @@ import JobsView from './components/JobsView';
 import ComparisonView from './components/ComparisonView';
 import DashboardView from './components/DashboardView';
 import ApplicationTrackerView from './components/ApplicationTrackerView';
+import PrivacyPage from './components/PrivacyPage';
 import Footer from './components/Footer';
 import FirstLaunchWarning from './components/FirstLaunchWarning';
 import { checkAndMigrateLocalData } from './services/dataService';
@@ -208,13 +209,14 @@ function App() {
                 {currentView === 'comparison' && <ComparisonView onNavigate={setCurrentView} />}
                 {currentView === 'applications' && <ApplicationTrackerView onNavigate={setCurrentView} />}
                 {currentView === 'dashboard' && <DashboardView onNavigate={setCurrentView} />}
+                {currentView === 'privacy' && <PrivacyPage onNavigate={setCurrentView} />}
               </motion.div>
             </AnimatePresence>
           </Container>
         </Box>
       </Box>
 
-      <Footer />
+      <Footer onNavigateToPrivacy={() => setCurrentView('privacy')} />
 
       {/* First Launch Warning */}
       <FirstLaunchWarning />
