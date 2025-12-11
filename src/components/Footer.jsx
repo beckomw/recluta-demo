@@ -1,20 +1,31 @@
 import React from 'react';
-import { Box, Container, Typography, Button, IconButton } from '@mui/material';
+import { Box, Container, Typography, Button, IconButton, Link } from '@mui/material';
 import { motion } from 'framer-motion';
 import GitHubIcon from '@mui/icons-material/GitHub';
-import TwitterIcon from '@mui/icons-material/Twitter';
-import RefreshIcon from '@mui/icons-material/Refresh';
+import DeleteForeverIcon from '@mui/icons-material/DeleteForever';
 import AutoAwesomeIcon from '@mui/icons-material/AutoAwesome';
+import SecurityIcon from '@mui/icons-material/Security';
+import StorageIcon from '@mui/icons-material/Storage';
+import CloudOffIcon from '@mui/icons-material/CloudOff';
+import VisibilityOffIcon from '@mui/icons-material/VisibilityOff';
+import CodeIcon from '@mui/icons-material/Code';
+import { clearAllData } from '../services/dataService';
 
-function Footer() {
-  const handleResetData = () => {
-    if (window.confirm('Are you sure you want to reset all data? This cannot be undone.')) {
-      localStorage.removeItem('app_resumes');
-      localStorage.removeItem('app_jobs');
-      localStorage.removeItem('app_user_profile');
+function Footer({ onNavigateToPrivacy }) {
+  const handleEraseAllData = () => {
+    if (window.confirm('This will permanently delete ALL your data including resumes, jobs, and applications. This cannot be undone. Continue?')) {
+      clearAllData();
+      localStorage.removeItem('app_first_launch_shown');
       window.location.reload();
     }
   };
+
+  const privacyPoints = [
+    { icon: StorageIcon, text: 'Data stored locally in your browser' },
+    { icon: CloudOffIcon, text: 'No data leaves your device' },
+    { icon: VisibilityOffIcon, text: 'No analytics or tracking' },
+    { icon: CodeIcon, text: 'Open-source transparency' },
+  ];
 
   return (
     <Box
@@ -27,6 +38,81 @@ function Footer() {
       }}
     >
       <Container maxWidth="lg">
+        {/* Privacy Statement Section */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5 }}
+          viewport={{ once: true }}
+        >
+          <Box
+            sx={{
+              p: 3,
+              mb: 4,
+              borderRadius: 3,
+              background: 'rgba(16, 185, 129, 0.05)',
+              border: '1px solid rgba(16, 185, 129, 0.15)',
+            }}
+          >
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
+              <SecurityIcon sx={{ color: '#10B981', fontSize: 20 }} />
+              <Typography variant="subtitle2" sx={{ fontWeight: 600, color: '#10B981' }}>
+                Privacy-First by Design
+              </Typography>
+            </Box>
+            <Box
+              sx={{
+                display: 'grid',
+                gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' },
+                gap: 1.5,
+              }}
+            >
+              {privacyPoints.map((point, index) => (
+                <Box key={index} sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                  <point.icon sx={{ fontSize: 16, color: 'rgba(255, 255, 255, 0.5)' }} />
+                  <Typography variant="body2" sx={{ color: 'rgba(255, 255, 255, 0.7)' }}>
+                    {point.text}
+                  </Typography>
+                </Box>
+              ))}
+            </Box>
+            <Box sx={{ mt: 2, display: 'flex', gap: 2, flexWrap: 'wrap', alignItems: 'center' }}>
+              {onNavigateToPrivacy && (
+                <Link
+                  component="button"
+                  onClick={onNavigateToPrivacy}
+                  sx={{
+                    color: '#10B981',
+                    textDecoration: 'none',
+                    fontSize: '0.875rem',
+                    fontWeight: 500,
+                    '&:hover': { textDecoration: 'underline' },
+                  }}
+                >
+                  Why Recluta is safe →
+                </Link>
+              )}
+              <Link
+                href="https://github.com/beckomw/recluta-demo"
+                target="_blank"
+                rel="noopener noreferrer"
+                sx={{
+                  color: 'rgba(255, 255, 255, 0.6)',
+                  textDecoration: 'none',
+                  fontSize: '0.875rem',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 0.5,
+                  '&:hover': { color: 'white' },
+                }}
+              >
+                <GitHubIcon sx={{ fontSize: 16 }} />
+                View source code
+              </Link>
+            </Box>
+          </Box>
+        </motion.div>
+
         <Box
           sx={{
             display: 'flex',
@@ -85,8 +171,8 @@ function Footer() {
               <Button
                 variant="outlined"
                 size="small"
-                startIcon={<RefreshIcon />}
-                onClick={handleResetData}
+                startIcon={<DeleteForeverIcon />}
+                onClick={handleEraseAllData}
                 sx={{
                   borderColor: 'rgba(239, 68, 68, 0.3)',
                   color: 'error.light',
@@ -96,7 +182,7 @@ function Footer() {
                   },
                 }}
               >
-                Reset Data
+                Erase All Data
               </Button>
             </Box>
           </motion.div>
