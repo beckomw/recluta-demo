@@ -2,7 +2,7 @@
  * Data Service - Handles data export, import, versioning, and migrations
  */
 
-const CURRENT_DATA_VERSION = 1;
+const CURRENT_DATA_VERSION = 2;
 const DATA_VERSION_KEY = 'app_data_version';
 const FIRST_LAUNCH_KEY = 'app_first_launch_shown';
 
@@ -179,8 +179,22 @@ export const migrateData = (data) => {
     currentVersion = 1;
   }
 
+  // Migration v1 -> v2: Add status, tags, notes, and activityLog to jobs
+  if (currentVersion < 2) {
+    if (migratedData.data.app_jobs) {
+      migratedData.data.app_jobs = migratedData.data.app_jobs.map((job) => ({
+        ...job,
+        status: job.status || 'none',
+        tags: job.tags || [],
+        notes: job.notes || '',
+        activityLog: job.activityLog || [],
+      }));
+    }
+    currentVersion = 2;
+  }
+
   // Add future migrations here as needed
-  // if (currentVersion < 2) { ... }
+  // if (currentVersion < 3) { ... }
 
   migratedData.version = currentVersion;
   return migratedData;
