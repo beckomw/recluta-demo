@@ -46,8 +46,15 @@ function App() {
     setShowHero(false);
   };
 
+  /**
+   * Navigation content component - renders the sidebar navigation items
+   * Accessible via keyboard navigation with proper ARIA attributes
+   */
   const NavContent = () => (
     <Box
+      component="nav"
+      role="navigation"
+      aria-label="Main navigation"
       sx={{
         display: 'flex',
         flexDirection: 'column',
@@ -65,10 +72,22 @@ function App() {
             whileTap={{ scale: 0.98 }}
           >
             <Box
+              component="button"
               onClick={() => {
                 setCurrentView(item.id);
                 setMobileOpen(false);
               }}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                  e.preventDefault();
+                  setCurrentView(item.id);
+                  setMobileOpen(false);
+                }
+              }}
+              role="menuitem"
+              aria-current={isActive ? 'page' : undefined}
+              aria-label={`Navigate to ${item.label}`}
+              tabIndex={0}
               sx={{
                 display: 'flex',
                 alignItems: 'center',
@@ -81,10 +100,19 @@ function App() {
                   : 'transparent',
                 border: isActive ? '1px solid rgba(139, 92, 246, 0.5)' : '1px solid transparent',
                 transition: 'all 0.3s ease',
+                width: '100%',
+                textAlign: 'left',
                 '&:hover': {
                   background: isActive
                     ? 'linear-gradient(135deg, rgba(139, 92, 246, 0.4) 0%, rgba(6, 182, 212, 0.3) 100%)'
                     : 'rgba(255, 255, 255, 0.05)',
+                },
+                '&:focus': {
+                  outline: '2px solid #8B5CF6',
+                  outlineOffset: '2px',
+                },
+                '&:focus:not(:focus-visible)': {
+                  outline: 'none',
                 },
               }}
             >
@@ -101,10 +129,12 @@ function App() {
                     : 'rgba(255, 255, 255, 0.1)',
                   transition: 'all 0.3s ease',
                 }}
+                aria-hidden="true"
               >
                 <Icon sx={{ color: 'white', fontSize: 20 }} />
               </Box>
               <Typography
+                component="span"
                 sx={{
                   fontWeight: isActive ? 600 : 500,
                   color: isActive ? 'white' : 'rgba(255, 255, 255, 0.7)',
@@ -123,6 +153,7 @@ function App() {
                     borderRadius: '50%',
                     background: 'linear-gradient(135deg, #8B5CF6, #06B6D4)',
                   }}
+                  aria-hidden="true"
                 />
               )}
             </Box>
@@ -134,6 +165,29 @@ function App() {
 
   return (
     <Box sx={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
+      {/* Skip navigation link for keyboard users */}
+      <Box
+        component="a"
+        href="#main-content"
+        sx={{
+          position: 'absolute',
+          left: '-9999px',
+          zIndex: 9999,
+          p: 2,
+          background: '#8B5CF6',
+          color: 'white',
+          textDecoration: 'none',
+          borderRadius: 1,
+          '&:focus': {
+            left: '50%',
+            top: 8,
+            transform: 'translateX(-50%)',
+          },
+        }}
+      >
+        Skip to main content
+      </Box>
+
       <Header
         isMobile={isMobile}
         onMenuClick={() => setMobileOpen(true)}
@@ -186,7 +240,10 @@ function App() {
             }}
           >
             <Box sx={{ display: 'flex', justifyContent: 'flex-end', p: 2 }}>
-              <IconButton onClick={() => setMobileOpen(false)}>
+              <IconButton
+                onClick={() => setMobileOpen(false)}
+                aria-label="Close navigation menu"
+              >
                 <CloseIcon />
               </IconButton>
             </Box>
@@ -194,7 +251,13 @@ function App() {
           </Drawer>
         )}
 
-        <Box sx={{ flex: 1, p: { xs: 2, md: 4 } }}>
+        <Box
+          component="main"
+          id="main-content"
+          role="main"
+          aria-label="Main content"
+          sx={{ flex: 1, p: { xs: 2, md: 4 } }}
+        >
           <Container maxWidth="xl">
             <AnimatePresence mode="wait">
               <motion.div
