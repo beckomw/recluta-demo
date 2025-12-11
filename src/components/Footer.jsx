@@ -8,6 +8,7 @@ import SecurityIcon from '@mui/icons-material/Security';
 import StorageIcon from '@mui/icons-material/Storage';
 import CloudOffIcon from '@mui/icons-material/CloudOff';
 import VisibilityOffIcon from '@mui/icons-material/VisibilityOff';
+import EmailIcon from '@mui/icons-material/Email';
 import CodeIcon from '@mui/icons-material/Code';
 import { clearAllData } from '../services/dataService';
 
@@ -24,7 +25,7 @@ function Footer({ onNavigateToPrivacy }) {
     { icon: StorageIcon, text: 'Data stored locally in your browser' },
     { icon: CloudOffIcon, text: 'No data leaves your device' },
     { icon: VisibilityOffIcon, text: 'No analytics or tracking' },
-    { icon: CodeIcon, text: 'Open-source transparency' },
+    { icon: EmailIcon, text: 'Email collected only for newsletter updates' },
   ];
 
   return (
