@@ -21,6 +21,10 @@ import {
   ToggleButton,
   ToggleButtonGroup,
   Alert,
+  Menu,
+  MenuItem,
+  Divider,
+  InputAdornment,
 } from '@mui/material';
 import { motion, AnimatePresence } from 'framer-motion';
 import DeleteIcon from '@mui/icons-material/Delete';
@@ -44,6 +48,32 @@ import SortIcon from '@mui/icons-material/Sort';
 import BoltIcon from '@mui/icons-material/Bolt';
 import ContentPasteIcon from '@mui/icons-material/ContentPaste';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
+import StarIcon from '@mui/icons-material/Star';
+import SendIcon from '@mui/icons-material/Send';
+import EventNoteIcon from '@mui/icons-material/EventNote';
+import LocalOfferIcon from '@mui/icons-material/LocalOffer';
+import NotesIcon from '@mui/icons-material/Notes';
+import TimelineIcon from '@mui/icons-material/Timeline';
+import FilterListIcon from '@mui/icons-material/FilterList';
+import PersonIcon from '@mui/icons-material/Person';
+
+// Job Status Definitions
+const JOB_STATUSES = {
+  none: { label: 'Not Started', color: '#6B7280', icon: WorkIcon },
+  interested: { label: 'Interested', color: '#F59E0B', icon: StarIcon },
+  applied: { label: 'Applied', color: '#8B5CF6', icon: SendIcon },
+  interviewing: { label: 'Interviewing', color: '#10B981', icon: EventNoteIcon },
+};
+
+// Quick note templates
+const NOTE_TEMPLATES = [
+  { label: 'Applied via LinkedIn', template: 'Applied via LinkedIn on {date}. Status: Waiting for response.' },
+  { label: 'Applied via Company Site', template: 'Applied via company website on {date}. Status: Waiting for response.' },
+  { label: 'Recruiter Contact', template: 'Recruiter: [Name] | Email: [email] | Phone: [phone]' },
+  { label: 'Follow-up Needed', template: 'Follow up on {date}. Contact: [name/email]' },
+  { label: 'Interview Scheduled', template: 'Interview scheduled for {date} at [time]. Type: [phone/video/onsite]' },
+  { label: 'Referral', template: 'Referred by [name]. Applied on {date}.' },
+];
 
 function JobsView({ onNavigate }) {
   const [jobs, setJobs] = useState([]);
@@ -57,9 +87,21 @@ function JobsView({ onNavigate }) {
     requirements: '',
     isFairChance: false,
     fairChanceNotes: '',
+    status: 'none',
+    tags: [],
+    notes: '',
+    activityLog: [],
   });
   const [showFairChanceOnly, setShowFairChanceOnly] = useState(false);
   const [sortFairChanceFirst, setSortFairChanceFirst] = useState(false);
+
+  // New state for tagging and filtering
+  const [filterStatus, setFilterStatus] = useState('all');
+  const [filterTags, setFilterTags] = useState([]);
+  const [newTagInput, setNewTagInput] = useState('');
+  const [showNotesPanel, setShowNotesPanel] = useState(null); // job id for notes panel
+  const [templateAnchor, setTemplateAnchor] = useState(null);
+  const [expandedJobId, setExpandedJobId] = useState(null);
   const [fairChanceAutoReason, setFairChanceAutoReason] = useState('');
   const [editId, setEditId] = useState(null);
   const [showForm, setShowForm] = useState(false);
@@ -458,6 +500,15 @@ function JobsView({ onNavigate }) {
       requirements: parsed.requirements,
       isFairChance: detection.likely,
       fairChanceNotes: detection.likely ? detection.reason : '',
+      status: 'none',
+      tags: [],
+      notes: '',
+      activityLog: [{
+        id: Date.now(),
+        date: new Date().toISOString(),
+        action: 'created',
+        details: 'Job added via Quick Add',
+      }],
     };
 
     // Validate minimum requirements
@@ -749,7 +800,16 @@ function JobsView({ onNavigate }) {
       saveJobs(updatedJobs);
       setEditId(null);
     } else {
-      const newJob = { ...currentJob, id: Date.now() };
+      const newJob = {
+        ...currentJob,
+        id: Date.now(),
+        activityLog: [{
+          id: Date.now(),
+          date: new Date().toISOString(),
+          action: 'created',
+          details: 'Job added',
+        }],
+      };
       saveJobs([...jobs, newJob]);
     }
 
@@ -768,10 +828,144 @@ function JobsView({ onNavigate }) {
       requirements: '',
       isFairChance: false,
       fairChanceNotes: '',
+      status: 'none',
+      tags: [],
+      notes: '',
+      activityLog: [],
     });
     setFairChanceAutoReason('');
     setExtractedSkills([]);
     setRawJobText('');
+    setNewTagInput('');
+  };
+
+  // Get all unique tags across all jobs
+  const getAllTags = useMemo(() => {
+    const tagSet = new Set();
+    jobs.forEach(job => {
+      (job.tags || []).forEach(tag => tagSet.add(tag));
+    });
+    return Array.from(tagSet).sort();
+  }, [jobs]);
+
+  // Add a tag to current job
+  const addTagToCurrentJob = (tag) => {
+    const normalizedTag = tag.trim().toLowerCase();
+    if (normalizedTag && !currentJob.tags.includes(normalizedTag)) {
+      setCurrentJob({
+        ...currentJob,
+        tags: [...currentJob.tags, normalizedTag],
+      });
+    }
+    setNewTagInput('');
+  };
+
+  // Remove a tag from current job
+  const removeTagFromCurrentJob = (tagToRemove) => {
+    setCurrentJob({
+      ...currentJob,
+      tags: currentJob.tags.filter(t => t !== tagToRemove),
+    });
+  };
+
+  // Add activity log entry
+  const addActivityLog = (job, action, details = '') => {
+    const entry = {
+      id: Date.now(),
+      date: new Date().toISOString(),
+      action,
+      details,
+    };
+    return [...(job.activityLog || []), entry];
+  };
+
+  // Update job status with activity log
+  const updateJobStatus = (jobId, newStatus) => {
+    const updatedJobs = jobs.map(job => {
+      if (job.id === jobId) {
+        const oldStatus = job.status || 'none';
+        const activityLog = addActivityLog(job, 'status_change',
+          `Changed from "${JOB_STATUSES[oldStatus]?.label || 'None'}" to "${JOB_STATUSES[newStatus]?.label}"`);
+        return { ...job, status: newStatus, activityLog };
+      }
+      return job;
+    });
+    saveJobs(updatedJobs);
+  };
+
+  // Update job notes
+  const updateJobNotes = (jobId, newNotes) => {
+    const updatedJobs = jobs.map(job => {
+      if (job.id === jobId) {
+        return { ...job, notes: newNotes };
+      }
+      return job;
+    });
+    saveJobs(updatedJobs);
+  };
+
+  // Add tag to existing job
+  const addTagToJob = (jobId, tag) => {
+    const normalizedTag = tag.trim().toLowerCase();
+    const updatedJobs = jobs.map(job => {
+      if (job.id === jobId) {
+        const currentTags = job.tags || [];
+        if (!currentTags.includes(normalizedTag)) {
+          const activityLog = addActivityLog(job, 'tag_added', `Added tag: "${normalizedTag}"`);
+          return { ...job, tags: [...currentTags, normalizedTag], activityLog };
+        }
+      }
+      return job;
+    });
+    saveJobs(updatedJobs);
+  };
+
+  // Remove tag from existing job
+  const removeTagFromJob = (jobId, tagToRemove) => {
+    const updatedJobs = jobs.map(job => {
+      if (job.id === jobId) {
+        const activityLog = addActivityLog(job, 'tag_removed', `Removed tag: "${tagToRemove}"`);
+        return {
+          ...job,
+          tags: (job.tags || []).filter(t => t !== tagToRemove),
+          activityLog
+        };
+      }
+      return job;
+    });
+    saveJobs(updatedJobs);
+  };
+
+  // Apply note template
+  const applyNoteTemplate = (template) => {
+    const today = new Date().toLocaleDateString();
+    const filledTemplate = template.replace(/\{date\}/g, today);
+
+    if (showNotesPanel) {
+      // Append to existing job's notes
+      const job = jobs.find(j => j.id === showNotesPanel);
+      if (job) {
+        const newNotes = job.notes ? `${job.notes}\n\n${filledTemplate}` : filledTemplate;
+        updateJobNotes(showNotesPanel, newNotes);
+      }
+    } else {
+      // Append to current job form
+      const newNotes = currentJob.notes ? `${currentJob.notes}\n\n${filledTemplate}` : filledTemplate;
+      setCurrentJob({ ...currentJob, notes: newNotes });
+    }
+    setTemplateAnchor(null);
+  };
+
+  // Format date for display
+  const formatDate = (dateString) => {
+    const date = new Date(dateString);
+    return date.toLocaleDateString('en-US', {
+      month: 'short',
+      day: 'numeric',
+      year: date.getFullYear() !== new Date().getFullYear() ? 'numeric' : undefined,
+      hour: 'numeric',
+      minute: '2-digit',
+    });
   };
 
   // Get filtered and sorted jobs
@@ -781,6 +975,18 @@ function JobsView({ onNavigate }) {
     // Filter to show only Fair Chance jobs if enabled
     if (showFairChanceOnly) {
       displayedJobs = displayedJobs.filter(job => job.isFairChance);
+    }
+
+    // Filter by status
+    if (filterStatus !== 'all') {
+      displayedJobs = displayedJobs.filter(job => (job.status || 'none') === filterStatus);
+    }
+
+    // Filter by tags
+    if (filterTags.length > 0) {
+      displayedJobs = displayedJobs.filter(job =>
+        filterTags.every(tag => (job.tags || []).includes(tag))
+      );
     }
 
     // Apply sorting
@@ -800,6 +1006,10 @@ function JobsView({ onNavigate }) {
         }
         case 'company':
           return (a.company || '').localeCompare(b.company || '');
+        case 'status': {
+          const statusOrder = ['interviewing', 'applied', 'interested', 'none'];
+          return statusOrder.indexOf(a.status || 'none') - statusOrder.indexOf(b.status || 'none');
+        }
         case 'date':
         default:
           return (b.id || 0) - (a.id || 0); // Newest first
@@ -826,7 +1036,14 @@ function JobsView({ onNavigate }) {
   };
 
   const handleEdit = (job) => {
-    setCurrentJob(job);
+    // Ensure new fields have default values for older jobs
+    setCurrentJob({
+      ...job,
+      status: job.status || 'none',
+      tags: job.tags || [],
+      notes: job.notes || '',
+      activityLog: job.activityLog || [],
+    });
     setEditId(job.id);
     setShowForm(true);
   };
@@ -1391,6 +1608,154 @@ function JobsView({ onNavigate }) {
                     </Collapse>
                   </Box>
 
+                  {/* Status, Tags, and Notes Section */}
+                  <Box sx={{ mb: 3, p: 2, borderRadius: 2, background: 'rgba(139, 92, 246, 0.05)', border: '1px solid rgba(139, 92, 246, 0.2)' }}>
+                    <Typography variant="subtitle2" sx={{ mb: 2, display: 'flex', alignItems: 'center', gap: 1, color: 'primary.light' }}>
+                      <LocalOfferIcon sx={{ fontSize: 18 }} />
+                      Status & Organization
+                    </Typography>
+
+                    {/* Status Selection */}
+                    <Box sx={{ mb: 2 }}>
+                      <Typography variant="body2" sx={{ color: 'text.secondary', mb: 1 }}>
+                        Application Status
+                      </Typography>
+                      <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
+                        {Object.entries(JOB_STATUSES).map(([key, statusInfo]) => {
+                          const StatusIcon = statusInfo.icon;
+                          const isSelected = currentJob.status === key;
+                          return (
+                            <Chip
+                              key={key}
+                              icon={<StatusIcon sx={{ fontSize: 16 }} />}
+                              label={statusInfo.label}
+                              onClick={() => setCurrentJob({ ...currentJob, status: key })}
+                              sx={{
+                                cursor: 'pointer',
+                                background: isSelected ? `${statusInfo.color}30` : 'rgba(255,255,255,0.05)',
+                                border: `1px solid ${isSelected ? statusInfo.color : 'rgba(255,255,255,0.1)'}`,
+                                color: isSelected ? statusInfo.color : 'text.secondary',
+                                '& .MuiChip-icon': { color: isSelected ? statusInfo.color : 'text.secondary' },
+                                '&:hover': {
+                                  background: `${statusInfo.color}20`,
+                                  borderColor: statusInfo.color,
+                                },
+                              }}
+                            />
+                          );
+                        })}
+                      </Box>
+                    </Box>
+
+                    {/* Custom Tags */}
+                    <Box sx={{ mb: 2 }}>
+                      <Typography variant="body2" sx={{ color: 'text.secondary', mb: 1 }}>
+                        Tags (e.g., remote, contract, urgent)
+                      </Typography>
+                      <Box sx={{ display: 'flex', gap: 1, alignItems: 'center', flexWrap: 'wrap' }}>
+                        {currentJob.tags.map((tag, index) => (
+                          <Chip
+                            key={index}
+                            label={tag}
+                            size="small"
+                            onDelete={() => removeTagFromCurrentJob(tag)}
+                            sx={{
+                              background: 'rgba(6, 182, 212, 0.2)',
+                              color: 'secondary.light',
+                              '& .MuiChip-deleteIcon': { color: 'rgba(6, 182, 212, 0.6)' },
+                            }}
+                          />
+                        ))}
+                        <TextField
+                          size="small"
+                          placeholder="Add tag..."
+                          value={newTagInput}
+                          onChange={(e) => setNewTagInput(e.target.value)}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter' && newTagInput.trim()) {
+                              e.preventDefault();
+                              addTagToCurrentJob(newTagInput);
+                            }
+                          }}
+                          sx={{
+                            width: 120,
+                            '& .MuiOutlinedInput-root': {
+                              fontSize: '0.875rem',
+                              '& fieldset': { borderColor: 'rgba(255,255,255,0.1)' },
+                            },
+                          }}
+                          InputProps={{
+                            endAdornment: newTagInput.trim() && (
+                              <InputAdornment position="end">
+                                <IconButton
+                                  size="small"
+                                  onClick={() => addTagToCurrentJob(newTagInput)}
+                                  sx={{ p: 0.5 }}
+                                >
+                                  <AddIcon sx={{ fontSize: 16 }} />
+                                </IconButton>
+                              </InputAdornment>
+                            ),
+                          }}
+                        />
+                      </Box>
+                      {/* Suggested tags from other jobs */}
+                      {getAllTags.length > 0 && (
+                        <Box sx={{ mt: 1 }}>
+                          <Typography variant="caption" sx={{ color: 'text.secondary' }}>
+                            Existing tags:{' '}
+                          </Typography>
+                          {getAllTags.filter(t => !currentJob.tags.includes(t)).slice(0, 5).map((tag, i) => (
+                            <Chip
+                              key={i}
+                              label={tag}
+                              size="small"
+                              onClick={() => addTagToCurrentJob(tag)}
+                              sx={{
+                                ml: 0.5,
+                                height: 20,
+                                fontSize: '0.65rem',
+                                cursor: 'pointer',
+                                background: 'rgba(255,255,255,0.05)',
+                                '&:hover': { background: 'rgba(6, 182, 212, 0.1)' },
+                              }}
+                            />
+                          ))}
+                        </Box>
+                      )}
+                    </Box>
+
+                    {/* Notes */}
+                    <Box>
+                      <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1 }}>
+                        <Typography variant="body2" sx={{ color: 'text.secondary' }}>
+                          Notes
+                        </Typography>
+                        <Button
+                          size="small"
+                          onClick={(e) => setTemplateAnchor(e.currentTarget)}
+                          startIcon={<AutoAwesomeIcon sx={{ fontSize: 14 }} />}
+                          sx={{ fontSize: '0.7rem', textTransform: 'none' }}
+                        >
+                          Templates
+                        </Button>
+                      </Box>
+                      <TextField
+                        fullWidth
+                        multiline
+                        rows={2}
+                        placeholder="Recruiter contact, follow-up dates, interview notes..."
+                        value={currentJob.notes}
+                        onChange={(e) => setCurrentJob({ ...currentJob, notes: e.target.value })}
+                        sx={{
+                          '& .MuiOutlinedInput-root': {
+                            fontSize: '0.875rem',
+                          },
+                        }}
+                      />
+                    </Box>
+                  </Box>
+
                   <Box sx={{ display: 'flex', gap: 2 }}>
                     <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} style={{ flex: 1 }}>
                       <Button
@@ -1465,16 +1830,129 @@ function JobsView({ onNavigate }) {
                       <span>Company</span>
                     </Tooltip>
                   </ToggleButton>
+                  <ToggleButton value="status">
+                    <Tooltip title="Sort by application status">
+                      <span>Status</span>
+                    </Tooltip>
+                  </ToggleButton>
                 </ToggleButtonGroup>
               </Box>
             )}
             <Typography variant="body2" sx={{ color: 'text.secondary' }}>
-              {showFairChanceOnly
+              {(filterStatus !== 'all' || filterTags.length > 0 || showFairChanceOnly)
                 ? `${getDisplayedJobs().length} of ${jobs.length} job${jobs.length !== 1 ? 's' : ''}`
                 : `${jobs.length} job${jobs.length !== 1 ? 's' : ''}`}
             </Typography>
           </Box>
         </Box>
+
+        {/* Status & Tag Filters */}
+        {jobs.length > 0 && (
+          <Box
+            sx={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 2,
+              flexWrap: 'wrap',
+              p: 2,
+              mb: 2,
+              borderRadius: 2,
+              background: 'rgba(139, 92, 246, 0.05)',
+              border: '1px solid rgba(139, 92, 246, 0.15)',
+            }}
+          >
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+              <FilterListIcon sx={{ color: 'primary.light', fontSize: 20 }} />
+              <Typography variant="subtitle2" sx={{ color: 'primary.light', fontWeight: 600 }}>
+                Filter
+              </Typography>
+            </Box>
+
+            {/* Status Filter */}
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+              <Typography variant="body2" sx={{ color: 'text.secondary' }}>Status:</Typography>
+              <Box sx={{ display: 'flex', gap: 0.5 }}>
+                <Chip
+                  label="All"
+                  size="small"
+                  onClick={() => setFilterStatus('all')}
+                  sx={{
+                    cursor: 'pointer',
+                    background: filterStatus === 'all' ? 'rgba(139, 92, 246, 0.3)' : 'rgba(255,255,255,0.05)',
+                    border: filterStatus === 'all' ? '1px solid rgba(139, 92, 246, 0.5)' : '1px solid transparent',
+                    '&:hover': { background: 'rgba(139, 92, 246, 0.2)' },
+                  }}
+                />
+                {Object.entries(JOB_STATUSES).map(([key, statusInfo]) => {
+                  const count = jobs.filter(j => (j.status || 'none') === key).length;
+                  if (count === 0) return null;
+                  return (
+                    <Chip
+                      key={key}
+                      label={`${statusInfo.label} (${count})`}
+                      size="small"
+                      onClick={() => setFilterStatus(filterStatus === key ? 'all' : key)}
+                      sx={{
+                        cursor: 'pointer',
+                        background: filterStatus === key ? `${statusInfo.color}30` : 'rgba(255,255,255,0.05)',
+                        border: filterStatus === key ? `1px solid ${statusInfo.color}` : '1px solid transparent',
+                        color: filterStatus === key ? statusInfo.color : 'text.secondary',
+                        '&:hover': { background: `${statusInfo.color}20` },
+                      }}
+                    />
+                  );
+                })}
+              </Box>
+            </Box>
+
+            {/* Tag Filter */}
+            {getAllTags.length > 0 && (
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                <Divider orientation="vertical" flexItem sx={{ mx: 1, borderColor: 'rgba(255,255,255,0.1)' }} />
+                <Typography variant="body2" sx={{ color: 'text.secondary' }}>Tags:</Typography>
+                <Box sx={{ display: 'flex', gap: 0.5, flexWrap: 'wrap' }}>
+                  {getAllTags.map((tag) => {
+                    const isSelected = filterTags.includes(tag);
+                    return (
+                      <Chip
+                        key={tag}
+                        label={tag}
+                        size="small"
+                        onClick={() => {
+                          setFilterTags(isSelected
+                            ? filterTags.filter(t => t !== tag)
+                            : [...filterTags, tag]
+                          );
+                        }}
+                        sx={{
+                          cursor: 'pointer',
+                          background: isSelected ? 'rgba(6, 182, 212, 0.3)' : 'rgba(255,255,255,0.05)',
+                          border: isSelected ? '1px solid rgba(6, 182, 212, 0.5)' : '1px solid transparent',
+                          color: isSelected ? 'secondary.light' : 'text.secondary',
+                          '&:hover': { background: 'rgba(6, 182, 212, 0.2)' },
+                        }}
+                      />
+                    );
+                  })}
+                </Box>
+              </Box>
+            )}
+
+            {/* Clear Filters */}
+            {(filterStatus !== 'all' || filterTags.length > 0) && (
+              <Button
+                size="small"
+                onClick={() => {
+                  setFilterStatus('all');
+                  setFilterTags([]);
+                }}
+                sx={{ ml: 'auto', fontSize: '0.75rem', textTransform: 'none' }}
+              >
+                Clear Filters
+              </Button>
+            )}
+          </Box>
+        )}
 
         {/* Fair Chance Filter/Sort Controls */}
         {jobs.length > 0 && jobs.some(job => job.isFairChance) && (
@@ -1769,9 +2247,30 @@ function JobsView({ onNavigate }) {
                         </Box>
                       </Box>
 
-                      <Typography variant="h6" sx={{ fontWeight: 600, mb: 1 }}>
-                        {job.title}
-                      </Typography>
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
+                        <Typography variant="h6" sx={{ fontWeight: 600, flex: 1 }}>
+                          {job.title}
+                        </Typography>
+                        {/* Status Badge */}
+                        {job.status && job.status !== 'none' && (
+                          <Chip
+                            icon={(() => {
+                              const StatusIcon = JOB_STATUSES[job.status]?.icon || WorkIcon;
+                              return <StatusIcon sx={{ fontSize: 14 }} />;
+                            })()}
+                            label={JOB_STATUSES[job.status]?.label}
+                            size="small"
+                            sx={{
+                              background: `${JOB_STATUSES[job.status]?.color}25`,
+                              border: `1px solid ${JOB_STATUSES[job.status]?.color}`,
+                              color: JOB_STATUSES[job.status]?.color,
+                              fontSize: '0.7rem',
+                              height: 24,
+                              '& .MuiChip-icon': { color: JOB_STATUSES[job.status]?.color },
+                            }}
+                          />
+                        )}
+                      </Box>
 
                       <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
                         <BusinessIcon sx={{ fontSize: 18, color: 'text.secondary' }} />
@@ -1781,7 +2280,7 @@ function JobsView({ onNavigate }) {
                       </Box>
 
                       {job.location && (
-                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
                           <LocationOnIcon sx={{ fontSize: 18, color: 'text.secondary' }} />
                           <Typography variant="body2" sx={{ color: 'text.secondary' }}>
                             {job.location}
@@ -1789,7 +2288,29 @@ function JobsView({ onNavigate }) {
                         </Box>
                       )}
 
-                      <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
+                      {/* Custom Tags */}
+                      {job.tags && job.tags.length > 0 && (
+                        <Box sx={{ display: 'flex', gap: 0.5, flexWrap: 'wrap', mb: 1.5 }}>
+                          {job.tags.map((tag, i) => (
+                            <Chip
+                              key={i}
+                              label={tag}
+                              size="small"
+                              onDelete={() => removeTagFromJob(job.id, tag)}
+                              sx={{
+                                height: 22,
+                                fontSize: '0.65rem',
+                                background: 'rgba(245, 158, 11, 0.15)',
+                                border: '1px solid rgba(245, 158, 11, 0.3)',
+                                color: '#F59E0B',
+                                '& .MuiChip-deleteIcon': { fontSize: 14, color: 'rgba(245, 158, 11, 0.5)' },
+                              }}
+                            />
+                          ))}
+                        </Box>
+                      )}
+
+                      <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap', mb: 2 }}>
                         {job.requirements
                           .split(',')
                           .slice(0, 4)
@@ -1819,7 +2340,36 @@ function JobsView({ onNavigate }) {
                         )}
                       </Box>
 
-                      <Box sx={{ mt: 2, display: 'flex', gap: 1, flexWrap: 'wrap' }}>
+                      {/* Quick Status Buttons */}
+                      <Box sx={{ display: 'flex', gap: 0.5, mb: 2, flexWrap: 'wrap' }}>
+                        {Object.entries(JOB_STATUSES).map(([key, statusInfo]) => {
+                          const StatusIcon = statusInfo.icon;
+                          const isActive = (job.status || 'none') === key;
+                          return (
+                            <Tooltip key={key} title={statusInfo.label} arrow>
+                              <IconButton
+                                size="small"
+                                onClick={() => updateJobStatus(job.id, key)}
+                                sx={{
+                                  width: 28,
+                                  height: 28,
+                                  background: isActive ? `${statusInfo.color}25` : 'rgba(255,255,255,0.05)',
+                                  border: isActive ? `1px solid ${statusInfo.color}` : '1px solid transparent',
+                                  color: isActive ? statusInfo.color : 'text.secondary',
+                                  '&:hover': {
+                                    background: `${statusInfo.color}20`,
+                                    color: statusInfo.color,
+                                  },
+                                }}
+                              >
+                                <StatusIcon sx={{ fontSize: 16 }} />
+                              </IconButton>
+                            </Tooltip>
+                          );
+                        })}
+                      </Box>
+
+                      <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap', alignItems: 'center' }}>
                         {job.url && (
                           <Button
                             size="small"
@@ -1849,7 +2399,80 @@ function JobsView({ onNavigate }) {
                             Details
                           </Button>
                         )}
+                        <Button
+                          size="small"
+                          startIcon={<NotesIcon />}
+                          onClick={() => setExpandedJobId(expandedJobId === job.id ? null : job.id)}
+                          sx={{
+                            color: job.notes || (job.activityLog && job.activityLog.length > 0) ? '#F59E0B' : 'text.secondary',
+                            '&:hover': { background: 'rgba(245, 158, 11, 0.1)' },
+                          }}
+                        >
+                          {job.notes ? 'Notes' : 'Add Notes'}
+                        </Button>
                       </Box>
+
+                      {/* Expandable Notes & Timeline Section */}
+                      <Collapse in={expandedJobId === job.id}>
+                        <Box sx={{ mt: 2, pt: 2, borderTop: '1px solid rgba(255,255,255,0.1)' }}>
+                          {/* Notes */}
+                          <Box sx={{ mb: 2 }}>
+                            <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1 }}>
+                              <Typography variant="subtitle2" sx={{ color: 'text.secondary', display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                                <NotesIcon sx={{ fontSize: 16 }} />
+                                Notes
+                              </Typography>
+                              <Button
+                                size="small"
+                                onClick={(e) => {
+                                  setShowNotesPanel(job.id);
+                                  setTemplateAnchor(e.currentTarget);
+                                }}
+                                sx={{ fontSize: '0.65rem', textTransform: 'none', py: 0 }}
+                              >
+                                + Template
+                              </Button>
+                            </Box>
+                            <TextField
+                              fullWidth
+                              multiline
+                              rows={2}
+                              size="small"
+                              placeholder="Recruiter: | Follow up: | Notes:"
+                              value={job.notes || ''}
+                              onChange={(e) => updateJobNotes(job.id, e.target.value)}
+                              sx={{
+                                '& .MuiOutlinedInput-root': {
+                                  fontSize: '0.8rem',
+                                  background: 'rgba(0,0,0,0.2)',
+                                },
+                              }}
+                            />
+                          </Box>
+
+                          {/* Activity Timeline */}
+                          {job.activityLog && job.activityLog.length > 0 && (
+                            <Box>
+                              <Typography variant="subtitle2" sx={{ color: 'text.secondary', display: 'flex', alignItems: 'center', gap: 0.5, mb: 1 }}>
+                                <TimelineIcon sx={{ fontSize: 16 }} />
+                                Activity Timeline
+                              </Typography>
+                              <Box sx={{ pl: 1, borderLeft: '2px solid rgba(139, 92, 246, 0.3)' }}>
+                                {job.activityLog.slice(-5).reverse().map((entry, i) => (
+                                  <Box key={entry.id || i} sx={{ mb: 1, pl: 1 }}>
+                                    <Typography variant="caption" sx={{ color: 'text.secondary', display: 'block' }}>
+                                      {formatDate(entry.date)}
+                                    </Typography>
+                                    <Typography variant="body2" sx={{ fontSize: '0.75rem' }}>
+                                      {entry.details}
+                                    </Typography>
+                                  </Box>
+                                ))}
+                              </Box>
+                            </Box>
+                          )}
+                        </Box>
+                      </Collapse>
                     </CardContent>
                   </Card>
                 </motion.div>
@@ -1971,6 +2594,43 @@ function JobsView({ onNavigate }) {
         </AnimatePresence>
         </>
       )}
+
+      {/* Note Templates Menu */}
+      <Menu
+        anchorEl={templateAnchor}
+        open={Boolean(templateAnchor)}
+        onClose={() => {
+          setTemplateAnchor(null);
+          setShowNotesPanel(null);
+        }}
+        PaperProps={{
+          sx: {
+            background: 'rgba(15, 15, 35, 0.98)',
+            backdropFilter: 'blur(20px)',
+            border: '1px solid rgba(255, 255, 255, 0.1)',
+            minWidth: 250,
+          },
+        }}
+      >
+        <Box sx={{ px: 2, py: 1, borderBottom: '1px solid rgba(255,255,255,0.1)' }}>
+          <Typography variant="subtitle2" sx={{ color: 'primary.light' }}>
+            Quick Templates
+          </Typography>
+        </Box>
+        {NOTE_TEMPLATES.map((template, i) => (
+          <MenuItem
+            key={i}
+            onClick={() => applyNoteTemplate(template.template)}
+            sx={{
+              fontSize: '0.85rem',
+              py: 1,
+              '&:hover': { background: 'rgba(139, 92, 246, 0.1)' },
+            }}
+          >
+            {template.label}
+          </MenuItem>
+        ))}
+      </Menu>
 
       {/* Delete Confirmation Dialog */}
       <Dialog
