@@ -24,6 +24,7 @@ import VideocamIcon from '@mui/icons-material/Videocam';
 import LocalOfferIcon from '@mui/icons-material/LocalOffer';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import TimelineIcon from '@mui/icons-material/Timeline';
+import DataManagement from './DataManagement';
 
 const containerVariants = {
   hidden: { opacity: 0 },
@@ -581,6 +582,11 @@ function DashboardView({ onNavigate }) {
           </motion.div>
         </Grid>
       </Grid>
+
+      {/* Data Management Section */}
+      <motion.div variants={itemVariants}>
+        <DataManagement onDataChange={calculateStats} />
+      </motion.div>
     </motion.div>
   );
 }

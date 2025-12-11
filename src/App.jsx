@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Box, Container, IconButton, Typography, Tooltip, Drawer, useMediaQuery, useTheme } from '@mui/material';
 import { motion, AnimatePresence } from 'framer-motion';
 import DescriptionIcon from '@mui/icons-material/Description';
@@ -15,6 +15,8 @@ import ComparisonView from './components/ComparisonView';
 import DashboardView from './components/DashboardView';
 import ApplicationTrackerView from './components/ApplicationTrackerView';
 import Footer from './components/Footer';
+import FirstLaunchWarning from './components/FirstLaunchWarning';
+import { checkAndMigrateLocalData } from './services/dataService';
 
 const navItems = [
   { id: 'resume', label: 'My Profile', icon: DescriptionIcon },
@@ -30,6 +32,14 @@ function App() {
   const [mobileOpen, setMobileOpen] = useState(false);
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
+
+  // Check and migrate data on app load
+  useEffect(() => {
+    const migration = checkAndMigrateLocalData();
+    if (migration.migrated) {
+      console.log(`Data migrated from v${migration.fromVersion} to v${migration.toVersion}`);
+    }
+  }, []);
 
   const handleGetStarted = () => {
     setShowHero(false);
@@ -205,6 +215,9 @@ function App() {
       </Box>
 
       <Footer />
+
+      {/* First Launch Warning */}
+      <FirstLaunchWarning />
     </Box>
   );
 }
