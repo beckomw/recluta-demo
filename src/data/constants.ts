@@ -5,6 +5,7 @@
  * constant values used throughout the application.
  */
 
+import type { SvgIconComponent } from '@mui/icons-material';
 import WorkIcon from '@mui/icons-material/Work';
 import StarIcon from '@mui/icons-material/Star';
 import SendIcon from '@mui/icons-material/Send';
@@ -18,7 +19,9 @@ export const JOB_STATUSES = {
   interested: { label: 'Interested', color: '#F59E0B', icon: StarIcon },
   applied: { label: 'Applied', color: '#8B5CF6', icon: SendIcon },
   interviewing: { label: 'Interviewing', color: '#10B981', icon: EventNoteIcon },
-};
+} as const satisfies Record<string, { label: string; color: string; icon: SvgIconComponent }>;
+
+export type JobStatusKey = keyof typeof JOB_STATUSES;
 
 /**
  * Quick note templates for job tracking
@@ -31,7 +34,7 @@ export const NOTE_TEMPLATES = [
   { label: 'Follow-up Needed', template: 'Follow up on {date}. Contact: [name/email]' },
   { label: 'Interview Scheduled', template: 'Interview scheduled for {date} at [time]. Type: [phone/video/onsite]' },
   { label: 'Referral', template: 'Referred by [name]. Applied on {date}.' },
-];
+] as const;
 
 /**
  * Application tracking status progression
@@ -47,7 +50,9 @@ export const APPLICATION_STATUSES = {
   rejected: { label: 'Rejected', color: '#EF4444' },
   withdrawn: { label: 'Withdrawn', color: '#6B7280' },
   no_response: { label: 'No Response', color: '#9CA3AF' },
-};
+} as const satisfies Record<string, { label: string; color: string }>;
+
+export type ApplicationStatusKey = keyof typeof APPLICATION_STATUSES;
 
 /**
  * Match verdict thresholds and messages
@@ -56,32 +61,35 @@ export const MATCH_VERDICTS = {
   excellent: {
     minPercent: 70,
     verdict: 'YES, APPLY!',
-    type: 'yes',
+    type: 'yes' as const,
     message: 'Strong Match',
     color: '#10B981',
   },
   good: {
     minPercent: 50,
     verdict: 'MAYBE',
-    type: 'maybe',
+    type: 'maybe' as const,
     message: 'Partial Match',
     color: '#8B5CF6',
   },
   stretch: {
     minPercent: 30,
     verdict: 'STRETCH',
-    type: 'stretch',
+    type: 'stretch' as const,
     message: 'Gap Detected',
     color: '#F59E0B',
   },
   low: {
     minPercent: 0,
     verdict: 'NOT YET',
-    type: 'no',
+    type: 'no' as const,
     message: 'Significant Gap',
     color: '#EF4444',
   },
-};
+} as const;
+
+export type MatchVerdictKey = keyof typeof MATCH_VERDICTS;
+export type VerdictType = typeof MATCH_VERDICTS[MatchVerdictKey]['type'];
 
 /**
  * localStorage keys used by the application
@@ -95,7 +103,9 @@ export const STORAGE_KEYS = {
   gamification: 'app_gamification',
   dataVersion: 'app_data_version',
   firstLaunchShown: 'app_first_launch_shown',
-};
+} as const;
+
+export type StorageKey = typeof STORAGE_KEYS[keyof typeof STORAGE_KEYS];
 
 /**
  * Current data schema version for migrations
@@ -108,7 +118,7 @@ export const CURRENT_DATA_VERSION = 2;
 export const FILE_LIMITS = {
   maxPdfSize: 10 * 1024 * 1024, // 10MB
   maxPdfPages: 20,
-};
+} as const;
 
 /**
  * Validation patterns
@@ -117,4 +127,4 @@ export const VALIDATION_PATTERNS = {
   email: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
   zipcode: /^\d{5}(-\d{4})?$/, // US ZIP or ZIP+4
   url: /^https?:\/\/.+/i,
-};
+} as const;

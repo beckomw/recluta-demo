@@ -2,6 +2,17 @@
  * Data Service - Handles data export, import, versioning, and migrations
  */
 
+import type {
+  ExportData,
+  ValidationResult,
+  ImportResult,
+  MigrationResult,
+  StorageStats,
+  Resume,
+  Job,
+  Application,
+} from '../types';
+
 const CURRENT_DATA_VERSION = 2;
 const DATA_VERSION_KEY = 'app_data_version';
 const FIRST_LAUNCH_KEY = 'app_first_launch_shown';
@@ -14,13 +25,15 @@ const DATA_KEYS = [
   'app_user_profile',
   'app_analytics',
   'app_gamification',
-];
+] as const;
+
+type DataKey = typeof DATA_KEYS[number];
 
 /**
  * Export all user data as a JSON object
  */
-export const exportAllData = () => {
-  const exportData = {
+export const exportAllData = (): ExportData => {
+  const exportData: ExportData = {
     version: CURRENT_DATA_VERSION,
     exportedAt: new Date().toISOString(),
     data: {},
@@ -32,7 +45,8 @@ export const exportAllData = () => {
       try {
         exportData.data[key] = JSON.parse(value);
       } catch {
-        exportData.data[key] = value;
+        // If parsing fails, store as-is (shouldn't happen normally)
+        (exportData.data as Record<string, unknown>)[key] = value;
       }
     }
   });
@@ -43,7 +57,7 @@ export const exportAllData = () => {
 /**
  * Download data as a JSON file
  */
-export const downloadDataAsFile = () => {
+export const downloadDataAsFile = (): boolean => {
   const data = exportAllData();
   const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
   const url = URL.createObjectURL(blob);
@@ -62,25 +76,27 @@ export const downloadDataAsFile = () => {
 /**
  * Validate import data structure
  */
-export const validateImportData = (data) => {
-  const errors = [];
+export const validateImportData = (data: unknown): ValidationResult => {
+  const errors: string[] = [];
 
   if (!data || typeof data !== 'object') {
     errors.push('Invalid file format: not a valid JSON object');
     return { valid: false, errors };
   }
 
-  if (!data.version) {
+  const importData = data as Partial<ExportData>;
+
+  if (!importData.version) {
     errors.push('Missing data version');
   }
 
-  if (!data.data || typeof data.data !== 'object') {
+  if (!importData.data || typeof importData.data !== 'object') {
     errors.push('Missing or invalid data section');
     return { valid: false, errors };
   }
 
   // Check for at least some recognized data
-  const hasRecognizedData = DATA_KEYS.some((key) => key in data.data);
+  const hasRecognizedData = DATA_KEYS.some((key) => key in importData.data);
   if (!hasRecognizedData) {
     errors.push('No recognized data found in file');
   }
@@ -88,18 +104,18 @@ export const validateImportData = (data) => {
   return {
     valid: errors.length === 0,
     errors,
-    warnings: data.version !== CURRENT_DATA_VERSION
-      ? [`Data version mismatch: file is v${data.version}, current is v${CURRENT_DATA_VERSION}`]
+    warnings: importData.version !== CURRENT_DATA_VERSION
+      ? [`Data version mismatch: file is v${importData.version}, current is v${CURRENT_DATA_VERSION}`]
       : [],
   };
 };
 
 /**
  * Import data from a JSON object
- * @param {Object} importData - The data to import
- * @param {boolean} merge - If true, merge with existing data; if false, replace
+ * @param importData - The data to import
+ * @param merge - If true, merge with existing data; if false, replace
  */
-export const importData = (importData, merge = false) => {
+export const importData = (importData: ExportData, merge: boolean = false): ImportResult => {
   const validation = validateImportData(importData);
   if (!validation.valid) {
     throw new Error(validation.errors.join(', '));
@@ -110,14 +126,14 @@ export const importData = (importData, merge = false) => {
 
   // Import each data key
   Object.entries(migratedData.data).forEach(([key, value]) => {
-    if (DATA_KEYS.includes(key)) {
+    if (DATA_KEYS.includes(key as DataKey)) {
       if (merge && Array.isArray(value)) {
         // Merge arrays by combining and deduplicating by id
         const existing = JSON.parse(localStorage.getItem(key) || '[]');
         const merged = [...existing];
 
-        value.forEach((item) => {
-          const existingIndex = merged.findIndex((e) => e.id === item.id);
+        value.forEach((item: Resume | Job | Application) => {
+          const existingIndex = merged.findIndex((e: Resume | Job | Application) => e.id === item.id);
           if (existingIndex === -1) {
             merged.push(item);
           }
@@ -135,21 +151,21 @@ export const importData = (importData, merge = false) => {
 
   return {
     success: true,
-    warnings: validation.warnings,
-    imported: Object.keys(migratedData.data).filter((k) => DATA_KEYS.includes(k)),
+    warnings: validation.warnings || [],
+    imported: Object.keys(migratedData.data).filter((k) => DATA_KEYS.includes(k as DataKey)),
   };
 };
 
 /**
  * Read and parse a JSON file
  */
-export const readJsonFile = (file) => {
+export const readJsonFile = (file: File): Promise<unknown> => {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
 
     reader.onload = (e) => {
       try {
-        const data = JSON.parse(e.target.result);
+        const data = JSON.parse(e.target?.result as string);
         resolve(data);
       } catch (error) {
         reject(new Error('Invalid JSON file'));
@@ -164,7 +180,7 @@ export const readJsonFile = (file) => {
 /**
  * Migrate data from older versions to current version
  */
-export const migrateData = (data) => {
+export const migrateData = (data: ExportData): ExportData => {
   let migratedData = { ...data };
   let currentVersion = data.version || 0;
 
@@ -203,13 +219,14 @@ export const migrateData = (data) => {
 /**
  * Check and update data version, running migrations if needed
  */
-export const checkAndMigrateLocalData = () => {
+export const checkAndMigrateLocalData = (): MigrationResult => {
   const storedVersion = parseInt(localStorage.getItem(DATA_VERSION_KEY) || '0', 10);
 
   if (storedVersion < CURRENT_DATA_VERSION) {
     // Build a pseudo-import object from current localStorage
-    const currentData = {
+    const currentData: ExportData = {
       version: storedVersion,
+      exportedAt: new Date().toISOString(),
       data: {},
     };
 
@@ -219,7 +236,7 @@ export const checkAndMigrateLocalData = () => {
         try {
           currentData.data[key] = JSON.parse(value);
         } catch {
-          currentData.data[key] = value;
+          (currentData.data as Record<string, unknown>)[key] = value;
         }
       }
     });
@@ -248,23 +265,23 @@ export const checkAndMigrateLocalData = () => {
 /**
  * Check if this is the first launch (first-launch warning not shown)
  */
-export const isFirstLaunch = () => {
+export const isFirstLaunch = (): boolean => {
   return !localStorage.getItem(FIRST_LAUNCH_KEY);
 };
 
 /**
  * Mark first launch warning as shown
  */
-export const markFirstLaunchShown = () => {
+export const markFirstLaunchShown = (): void => {
   localStorage.setItem(FIRST_LAUNCH_KEY, 'true');
 };
 
 /**
  * Get storage usage statistics
  */
-export const getStorageStats = () => {
+export const getStorageStats = (): StorageStats => {
   let totalSize = 0;
-  const breakdown = {};
+  const breakdown: Record<string, number> = {};
 
   DATA_KEYS.forEach((key) => {
     const value = localStorage.getItem(key);
@@ -291,7 +308,7 @@ export const getStorageStats = () => {
 /**
  * Clear all app data (with confirmation)
  */
-export const clearAllData = () => {
+export const clearAllData = (): void => {
   DATA_KEYS.forEach((key) => {
     localStorage.removeItem(key);
   });
