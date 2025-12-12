@@ -10,6 +10,19 @@
  */
 
 import * as webllm from '@mlc-ai/web-llm';
+import type {
+  GenerateOptions,
+  ProgressCallback,
+  ProgressUpdate,
+  WebGPUSupportResult,
+  ServiceMetrics,
+  ServiceStatus,
+  MetricsSummary,
+  GenerationMetricDetailed,
+  LogEntry,
+  MemorySnapshot,
+  MetricsExport,
+} from '../types';
 
 // Use a small, fast model suitable for text enhancement
 // Phi-3.5-mini is ~2GB and runs well on most modern devices
@@ -19,15 +32,18 @@ const MODEL_ID = 'Phi-3.5-mini-instruct-q4f16_1-MLC';
 const FALLBACK_MODEL_ID = 'Qwen2.5-0.5B-Instruct-q4f16_1-MLC';
 
 class WebLLMService {
-  constructor() {
-    this.engine = null;
-    this.isLoading = false;
-    this.isReady = false;
-    this.loadProgress = 0;
-    this.loadStatus = '';
-    this.currentModel = null;
-    this.onProgressCallback = null;
+  private engine: webllm.MLCEngine | null = null;
+  private isLoading: boolean = false;
+  private isReady: boolean = false;
+  private loadProgress: number = 0;
+  private loadStatus: string = '';
+  private currentModel: string | null = null;
+  private onProgressCallback: ProgressCallback | null = null;
+  private DEBUG: boolean;
+  private metrics: ServiceMetrics;
+  private memorySnapshots: MemorySnapshot[] = [];
 
+  constructor() {
     // Debug mode - controlled by environment variable
     this.DEBUG = import.meta.env.VITE_WEBLLM_DEBUG === 'true';
 
@@ -48,21 +64,22 @@ class WebLLMService {
       errors: [],
     };
 
-    // Memory tracking
-    this.memorySnapshots = [];
-
     this.log('WebLLM Service initialized', { debug: this.DEBUG });
   }
 
   /**
    * Structured logging method
    */
-  log(message, data = {}, level = 'info') {
+  private log(
+    message: string,
+    data: Record<string, unknown> = {},
+    level: 'info' | 'warn' | 'error' | 'debug' = 'info'
+  ): void {
     if (!this.DEBUG && level !== 'error' && level !== 'warn') {
       return;
     }
 
-    const logEntry = {
+    const logEntry: LogEntry = {
       timestamp: new Date().toISOString(),
       level,
       service: 'WebLLM',
@@ -94,9 +111,9 @@ class WebLLMService {
   /**
    * Take a memory snapshot
    */
-  captureMemorySnapshot(label) {
+  private captureMemorySnapshot(label: string): MemorySnapshot | null {
     if (performance.memory) {
-      const snapshot = {
+      const snapshot: MemorySnapshot = {
         timestamp: Date.now(),
         label,
         usedJSHeapSize: performance.memory.usedJSHeapSize,
@@ -113,7 +130,7 @@ class WebLLMService {
   /**
    * Initialize the WebLLM engine with progress callback
    */
-  async initialize(onProgress) {
+  async initialize(onProgress?: ProgressCallback): Promise<boolean> {
     if (this.isReady && this.engine) {
       this.log('Model already initialized', { model: this.currentModel }, 'debug');
       return true;
@@ -129,7 +146,7 @@ class WebLLMService {
     this.captureMemorySnapshot('before_init');
 
     this.isLoading = true;
-    this.onProgressCallback = onProgress;
+    this.onProgressCallback = onProgress || null;
 
     this.log('Starting model initialization', {
       primaryModel: MODEL_ID,
@@ -146,7 +163,7 @@ class WebLLMService {
 
       this.log('WebGPU support confirmed', {}, 'debug');
 
-      const progressCallback = (progress) => {
+      const progressCallback = (progress: { progress: number; text?: string }): void => {
         this.loadProgress = Math.round(progress.progress * 100);
         this.loadStatus = progress.text || 'Loading model...';
 
@@ -185,7 +202,7 @@ class WebLLMService {
         this.log('Primary model loaded successfully', { model: MODEL_ID });
       } catch (primaryError) {
         this.log('Primary model failed, trying fallback', {
-          error: primaryError.message,
+          error: (primaryError as Error).message,
           fallbackModel: FALLBACK_MODEL_ID,
         }, 'warn');
 
@@ -219,8 +236,8 @@ class WebLLMService {
       this.isReady = false;
 
       this.log('WebLLM initialization error', {
-        error: error.message,
-        stack: error.stack,
+        error: (error as Error).message,
+        stack: (error as Error).stack,
       }, 'error');
 
       this.captureMemorySnapshot('after_init_error');
@@ -231,13 +248,13 @@ class WebLLMService {
   /**
    * Check if model is cached (heuristic based on IndexedDB)
    */
-  async checkModelCache() {
+  private async checkModelCache(): Promise<boolean> {
     try {
       const databases = await indexedDB.databases();
       const webllmDB = databases.find(db => db.name && db.name.includes('webllm'));
       return !!webllmDB;
     } catch (e) {
-      this.log('Could not check cache', { error: e.message }, 'debug');
+      this.log('Could not check cache', { error: (e as Error).message }, 'debug');
       return false;
     }
   }
@@ -245,7 +262,7 @@ class WebLLMService {
   /**
    * Check if WebGPU is available
    */
-  static async checkWebGPUSupport() {
+  static async checkWebGPUSupport(): Promise<WebGPUSupportResult> {
     if (!navigator.gpu) {
       return { supported: false, reason: 'WebGPU not available' };
     }
@@ -257,14 +274,14 @@ class WebLLMService {
       }
       return { supported: true };
     } catch (e) {
-      return { supported: false, reason: e.message };
+      return { supported: false, reason: (e as Error).message };
     }
   }
 
   /**
    * Generate enhanced text based on prompt
    */
-  async generate(prompt, options = {}) {
+  async generate(prompt: string, options: GenerateOptions = {}): Promise<string> {
     if (!this.isReady || !this.engine) {
       const error = new Error('WebLLM not initialized. Call initialize() first.');
       this.log('Generate called before initialization', {}, 'error');
@@ -314,10 +331,10 @@ class WebLLMService {
       const completionTokens = response.usage?.completion_tokens || 0;
 
       // Calculate throughput (tokens per second)
-      const throughput = tokensUsed > 0 ? (tokensUsed / (duration / 1000)).toFixed(2) : 0;
+      const throughput = tokensUsed > 0 ? parseFloat((tokensUsed / (duration / 1000)).toFixed(2)) : 0;
 
       // Record generation metrics
-      const generationMetric = {
+      const generationMetric: GenerationMetricDetailed = {
         timestamp: Date.now(),
         type,
         duration,
@@ -325,7 +342,7 @@ class WebLLMService {
         tokensUsed,
         promptTokens,
         completionTokens,
-        throughput: parseFloat(throughput),
+        throughput,
         temperature,
         maxTokens,
         promptLength: prompt.length,
@@ -356,7 +373,7 @@ class WebLLMService {
 
       this.log('Generation error', {
         type,
-        error: error.message,
+        error: (error as Error).message,
         duration,
         promptLength: prompt.length,
       }, 'error');
@@ -369,7 +386,7 @@ class WebLLMService {
   /**
    * Enhance a professional summary
    */
-  async enhanceSummary(summary, targetRole = '') {
+  async enhanceSummary(summary: string, targetRole: string = ''): Promise<string> {
     const roleContext = targetRole ? ` for a ${targetRole} position` : '';
     const prompt = `Improve this professional summary to be more concise and impactful${roleContext}. Keep it to 2-3 sentences maximum. Focus on value and achievements.
 
@@ -388,7 +405,7 @@ Improved summary:`;
   /**
    * Enhance work experience description
    */
-  async enhanceExperience(experience) {
+  async enhanceExperience(experience: string): Promise<string> {
     const prompt = `Rewrite this work experience to be more concise and impactful. Use action verbs, quantify achievements where possible, and focus on results. Format as bullet points.
 
 Current experience:
@@ -406,7 +423,7 @@ Improved experience:`;
   /**
    * Optimize skills list for a job description
    */
-  async optimizeSkills(skills, jobDescription = '') {
+  async optimizeSkills(skills: string, jobDescription: string = ''): Promise<string> {
     const jobContext = jobDescription
       ? `\n\nTarget job description:\n${jobDescription.substring(0, 500)}`
       : '';
@@ -428,7 +445,7 @@ Optimized skills list:`;
   /**
    * Generate a professional summary from skills and experience
    */
-  async generateSummary(skills, experience, targetRole = '') {
+  async generateSummary(skills: string, experience: string, targetRole: string = ''): Promise<string> {
     const roleContext = targetRole ? ` for a ${targetRole} position` : '';
     const prompt = `Create a compelling 2-3 sentence professional summary${roleContext} based on these skills and experience. Be specific and highlight key strengths.
 
@@ -448,7 +465,7 @@ Professional summary:`;
   /**
    * Suggest additional relevant skills based on existing skills
    */
-  async suggestSkills(currentSkills, targetRole = '') {
+  async suggestSkills(currentSkills: string, targetRole: string = ''): Promise<string> {
     const roleContext = targetRole ? ` for a ${targetRole} role` : '';
     const prompt = `Based on these existing skills, suggest 3-5 additional complementary technical skills that would strengthen a resume${roleContext}. Only suggest skills that commonly pair with these. Return as comma-separated list.
 
@@ -466,7 +483,7 @@ Suggested additional skills:`;
   /**
    * Clean up and unload the model
    */
-  async unload() {
+  async unload(): Promise<void> {
     this.log('Unloading model', { model: this.currentModel });
     this.captureMemorySnapshot('before_unload');
 
@@ -484,7 +501,7 @@ Suggested additional skills:`;
   /**
    * Get current status
    */
-  getStatus() {
+  getStatus(): ServiceStatus {
     return {
       isLoading: this.isLoading,
       isReady: this.isReady,
@@ -498,7 +515,7 @@ Suggested additional skills:`;
   /**
    * Get performance metrics
    */
-  getMetrics() {
+  getMetrics(): MetricsSummary {
     const avgGenerationTime =
       this.metrics.totalGenerations > 0
         ? this.metrics.generations.reduce((sum, gen) => sum + gen.duration, 0) /
@@ -514,7 +531,7 @@ Suggested additional skills:`;
     const generationsByType = this.metrics.generations.reduce((acc, gen) => {
       acc[gen.type] = (acc[gen.type] || 0) + 1;
       return acc;
-    }, {});
+    }, {} as Record<string, number>);
 
     return {
       initialization: {
@@ -557,22 +574,22 @@ Suggested additional skills:`;
   /**
    * Get detailed metrics for all generations
    */
-  getAllGenerations() {
+  getAllGenerations(): GenerationMetricDetailed[] {
     return this.metrics.generations;
   }
 
   /**
    * Get memory snapshots
    */
-  getMemorySnapshots() {
+  getMemorySnapshots(): MemorySnapshot[] {
     return this.memorySnapshots;
   }
 
   /**
    * Export metrics as JSON
    */
-  exportMetrics() {
-    const data = {
+  exportMetrics(): string {
+    const data: MetricsExport = {
       exportedAt: new Date().toISOString(),
       status: this.getStatus(),
       metrics: this.getMetrics(),
@@ -586,7 +603,7 @@ Suggested additional skills:`;
   /**
    * Download metrics as JSON file
    */
-  downloadMetrics(filename = 'webllm-metrics.json') {
+  downloadMetrics(filename: string = 'webllm-metrics.json'): void {
     const data = this.exportMetrics();
     const blob = new Blob([data], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
@@ -602,7 +619,7 @@ Suggested additional skills:`;
   /**
    * Reset metrics (useful for testing)
    */
-  resetMetrics() {
+  resetMetrics(): void {
     this.log('Resetting metrics');
 
     this.metrics = {
@@ -628,7 +645,7 @@ Suggested additional skills:`;
   /**
    * Print metrics summary to console
    */
-  printMetrics() {
+  printMetrics(): void {
     const metrics = this.getMetrics();
     console.log('=== WebLLM Performance Metrics ===');
     console.table({

@@ -8,6 +8,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { STORAGE_KEYS } from '../data/constants';
+import type { Resume, Job, Application } from '../types';
 
 /**
  * Generic hook for persisting state to localStorage
@@ -16,19 +17,22 @@ import { STORAGE_KEYS } from '../data/constants';
  * Updates are immediately persisted to localStorage.
  *
  * @template T
- * @param {string} key - localStorage key
- * @param {T} initialValue - Default value if nothing in storage
- * @returns {[T, (value: T | ((prev: T) => T)) => void]} State and setter tuple
+ * @param key - localStorage key
+ * @param initialValue - Default value if nothing in storage
+ * @returns State and setter tuple
  *
  * @example
- * const [todos, setTodos] = useLocalStorage('todos', []);
+ * const [todos, setTodos] = useLocalStorage<string[]>('todos', []);
  */
-export const useLocalStorage = (key, initialValue) => {
+export const useLocalStorage = <T>(
+  key: string,
+  initialValue: T
+): [T, (value: T | ((prev: T) => T)) => void] => {
   // Get initial value from localStorage or use provided default
-  const [storedValue, setStoredValue] = useState(() => {
+  const [storedValue, setStoredValue] = useState<T>(() => {
     try {
       const item = localStorage.getItem(key);
-      return item ? JSON.parse(item) : initialValue;
+      return item ? (JSON.parse(item) as T) : initialValue;
     } catch (error) {
       console.error(`Error reading localStorage key "${key}":`, error);
       return initialValue;
@@ -37,7 +41,7 @@ export const useLocalStorage = (key, initialValue) => {
 
   // Setter that persists to localStorage
   const setValue = useCallback(
-    (value) => {
+    (value: T | ((prev: T) => T)) => {
       try {
         // Allow value to be a function (like useState)
         const valueToStore =
@@ -57,19 +61,23 @@ export const useLocalStorage = (key, initialValue) => {
 /**
  * Hook for managing resumes in localStorage
  *
- * @returns {Object} Resume data and operations
- * @property {Array} resumes - Array of resume objects
- * @property {Function} addResume - Add a new resume
- * @property {Function} updateResume - Update existing resume
- * @property {Function} deleteResume - Delete a resume by ID
- * @property {Function} duplicateResume - Create a copy of a resume
+ * @returns Resume data and operations
  */
-export const useResumes = () => {
-  const [resumes, setResumes] = useLocalStorage(STORAGE_KEYS.resumes, []);
+export interface UseResumesReturn {
+  resumes: Resume[];
+  setResumes: (value: Resume[] | ((prev: Resume[]) => Resume[])) => void;
+  addResume: (resume: Omit<Resume, 'id'>) => Resume;
+  updateResume: (id: number, updates: Partial<Resume>) => void;
+  deleteResume: (id: number) => void;
+  duplicateResume: (resume: Resume) => Resume;
+}
+
+export const useResumes = (): UseResumesReturn => {
+  const [resumes, setResumes] = useLocalStorage<Resume[]>(STORAGE_KEYS.resumes, []);
 
   const addResume = useCallback(
-    (resume) => {
-      const newResume = { ...resume, id: Date.now() };
+    (resume: Omit<Resume, 'id'>): Resume => {
+      const newResume: Resume = { ...resume, id: Date.now() } as Resume;
       setResumes((prev) => [...prev, newResume]);
       return newResume;
     },
@@ -77,7 +85,7 @@ export const useResumes = () => {
   );
 
   const updateResume = useCallback(
-    (id, updates) => {
+    (id: number, updates: Partial<Resume>) => {
       setResumes((prev) =>
         prev.map((r) => (r.id === id ? { ...r, ...updates } : r))
       );
@@ -86,15 +94,15 @@ export const useResumes = () => {
   );
 
   const deleteResume = useCallback(
-    (id) => {
+    (id: number) => {
       setResumes((prev) => prev.filter((r) => r.id !== id));
     },
     [setResumes]
   );
 
   const duplicateResume = useCallback(
-    (resume) => {
-      const duplicate = {
+    (resume: Resume): Resume => {
+      const duplicate: Resume = {
         ...resume,
         id: Date.now(),
         title: `${resume.title} (Copy)`,
@@ -118,24 +126,30 @@ export const useResumes = () => {
 /**
  * Hook for managing jobs in localStorage
  *
- * @returns {Object} Job data and operations
- * @property {Array} jobs - Array of job objects
- * @property {Function} addJob - Add a new job
- * @property {Function} updateJob - Update existing job
- * @property {Function} deleteJob - Delete a job by ID
+ * @returns Job data and operations
  */
-export const useJobs = () => {
-  const [jobs, setJobs] = useLocalStorage(STORAGE_KEYS.jobs, []);
+export interface UseJobsReturn {
+  jobs: Job[];
+  setJobs: (value: Job[] | ((prev: Job[]) => Job[])) => void;
+  addJob: (job: Omit<Job, 'id' | 'activityLog'>) => Job;
+  updateJob: (id: number, updates: Partial<Job>) => void;
+  deleteJob: (id: number) => void;
+}
+
+export const useJobs = (): UseJobsReturn => {
+  const [jobs, setJobs] = useLocalStorage<Job[]>(STORAGE_KEYS.jobs, []);
 
   const addJob = useCallback(
-    (job) => {
-      const newJob = {
+    (job: Omit<Job, 'id' | 'activityLog'>): Job => {
+      const newJob: Job = {
         ...job,
         id: Date.now(),
         activityLog: [
           {
+            id: Date.now(),
             action: 'created',
             date: new Date().toISOString(),
+            details: 'Job created',
           },
         ],
       };
@@ -146,7 +160,7 @@ export const useJobs = () => {
   );
 
   const updateJob = useCallback(
-    (id, updates) => {
+    (id: number, updates: Partial<Job>) => {
       setJobs((prev) =>
         prev.map((j) => {
           if (j.id !== id) return j;
@@ -157,8 +171,10 @@ export const useJobs = () => {
             updatedJob.activityLog = [
               ...(j.activityLog || []),
               {
+                id: Date.now(),
                 action: `status_changed_to_${updates.status}`,
                 date: new Date().toISOString(),
+                details: `Status changed to ${updates.status}`,
               },
             ];
           }
@@ -170,7 +186,7 @@ export const useJobs = () => {
   );
 
   const deleteJob = useCallback(
-    (id) => {
+    (id: number) => {
       setJobs((prev) => prev.filter((j) => j.id !== id));
     },
     [setJobs]
@@ -188,23 +204,33 @@ export const useJobs = () => {
 /**
  * Hook for managing applications in localStorage
  *
- * @returns {Object} Application data and operations
+ * @returns Application data and operations
  */
-export const useApplications = () => {
-  const [applications, setApplications] = useLocalStorage(
+export interface UseApplicationsReturn {
+  applications: Application[];
+  setApplications: (value: Application[] | ((prev: Application[]) => Application[])) => void;
+  addApplication: (application: Omit<Application, 'id' | 'timeline'>) => Application;
+  updateApplication: (id: string, updates: Partial<Application> & { statusNote?: string }) => void;
+  deleteApplication: (id: string) => void;
+}
+
+export const useApplications = (): UseApplicationsReturn => {
+  const [applications, setApplications] = useLocalStorage<Application[]>(
     STORAGE_KEYS.applications,
     []
   );
 
   const addApplication = useCallback(
-    (application) => {
-      const newApplication = {
+    (application: Omit<Application, 'id' | 'timeline'>): Application => {
+      const newApplication: Application = {
         ...application,
-        id: Date.now(),
-        statusHistory: [
+        id: Date.now().toString(),
+        timeline: [
           {
+            id: Date.now().toString(),
             status: application.status || 'applied',
             date: new Date().toISOString(),
+            notes: '',
           },
         ],
       };
@@ -215,21 +241,22 @@ export const useApplications = () => {
   );
 
   const updateApplication = useCallback(
-    (id, updates) => {
+    (id: string, updates: Partial<Application> & { statusNote?: string }) => {
       setApplications((prev) =>
         prev.map((app) => {
           if (app.id !== id) return app;
 
           const updatedApp = { ...app, ...updates };
 
-          // Track status changes in history
+          // Track status changes in timeline
           if (updates.status && updates.status !== app.status) {
-            updatedApp.statusHistory = [
-              ...(app.statusHistory || []),
+            updatedApp.timeline = [
+              ...(app.timeline || []),
               {
+                id: Date.now().toString(),
                 status: updates.status,
                 date: new Date().toISOString(),
-                note: updates.statusNote || '',
+                notes: updates.statusNote || '',
               },
             ];
           }
@@ -242,7 +269,7 @@ export const useApplications = () => {
   );
 
   const deleteApplication = useCallback(
-    (id) => {
+    (id: string) => {
       setApplications((prev) => prev.filter((app) => app.id !== id));
     },
     [setApplications]
