@@ -18,13 +18,11 @@
     "allowJs": true,
     "checkJs": false,
 
-    /* Linting - Start lenient, increase strictness later */
-    "strict": false,
-    "noUnusedLocals": false,
-    "noUnusedParameters": false,
+    /* Linting - Strict mode enabled */
+    "strict": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
     "noFallthroughCasesInSwitch": true,
-    "noImplicitAny": false,
-    "strictNullChecks": false,
 
     /* Path resolution */
     "baseUrl": ".",
