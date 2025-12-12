@@ -13,21 +13,24 @@ import { ALL_COMMON_SKILLS, normalizeSkillName } from '../data/skills';
  * Uses pattern matching against a curated list of common tech skills.
  * Handles variations (e.g., "React.js", "ReactJS", "react") and normalizes output.
  *
- * @param {string} description - Text to extract skills from (job description, resume, etc.)
- * @param {number} minLength - Minimum text length to process (default: 20)
- * @returns {string[]} Array of normalized skill names found in the text
+ * @param description - Text to extract skills from (job description, resume, etc.)
+ * @param minLength - Minimum text length to process (default: 20)
+ * @returns Array of normalized skill names found in the text
  *
  * @example
  * extractSkillsFromDescription("Looking for React and Node.js developer")
  * // Returns: ['React', 'Node.js']
  */
-export const extractSkillsFromDescription = (description, minLength = 20) => {
+export const extractSkillsFromDescription = (
+  description: string,
+  minLength: number = 20
+): string[] => {
   if (!description || description.length < minLength) {
     return [];
   }
 
   const lowerDesc = description.toLowerCase();
-  const foundSkills = new Set();
+  const foundSkills = new Set<string>();
 
   // Look for exact matches with word boundaries
   ALL_COMMON_SKILLS.forEach((skill) => {
@@ -50,20 +53,20 @@ export const extractSkillsFromDescription = (description, minLength = 20) => {
  *
  * Looks for patterns like "5+ years experience" or "3 yrs of exp"
  *
- * @param {string} description - Job description text
- * @returns {string[]} Array of experience requirements found
+ * @param description - Job description text
+ * @returns Array of experience requirements found
  *
  * @example
  * extractExperienceRequirements("Must have 5+ years of experience in React")
  * // Returns: ['5+ years experience']
  */
-export const extractExperienceRequirements = (description) => {
+export const extractExperienceRequirements = (description: string): string[] => {
   if (!description) return [];
 
-  const requirements = [];
+  const requirements: string[] = [];
   const yearsPattern = /(\d+)\+?\s*(?:years?|yrs?)\s+(?:of\s+)?(?:experience|exp)/gi;
 
-  let match;
+  let match: RegExpExecArray | null;
   while ((match = yearsPattern.exec(description)) !== null) {
     requirements.push(`${match[1]}+ years experience`);
   }
@@ -74,14 +77,14 @@ export const extractExperienceRequirements = (description) => {
 /**
  * Parses a comma-separated skills string into a normalized array
  *
- * @param {string} skillsString - Comma-separated skills
- * @returns {string[]} Array of trimmed, non-empty skills
+ * @param skillsString - Comma-separated skills
+ * @returns Array of trimmed, non-empty skills
  *
  * @example
  * parseSkillsString("  React, Node.js,  , Python  ")
  * // Returns: ['React', 'Node.js', 'Python']
  */
-export const parseSkillsString = (skillsString) => {
+export const parseSkillsString = (skillsString: string): string[] => {
   if (!skillsString) return [];
 
   return skillsString
@@ -93,20 +96,20 @@ export const parseSkillsString = (skillsString) => {
 /**
  * Converts skills array back to comma-separated string
  *
- * @param {string[]} skillsArray - Array of skills
- * @returns {string} Comma-separated skills string
+ * @param skillsArray - Array of skills
+ * @returns Comma-separated skills string
  */
-export const skillsArrayToString = (skillsArray) => {
+export const skillsArrayToString = (skillsArray: string[]): string => {
   return skillsArray.join(', ');
 };
 
 /**
  * Combines skill extraction from description and requirements into a single list
  *
- * @param {string} description - Job/resume text
- * @returns {string[]} Combined array of skills and experience requirements
+ * @param description - Job/resume text
+ * @returns Combined array of skills and experience requirements
  */
-export const extractAllSkillsAndRequirements = (description) => {
+export const extractAllSkillsAndRequirements = (description: string): string[] => {
   const skills = extractSkillsFromDescription(description);
   const experience = extractExperienceRequirements(description);
   return [...skills, ...experience];

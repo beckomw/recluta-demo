@@ -204,10 +204,12 @@ export interface MatchAnalysis {
 // ============================================================================
 
 export type EnhancementType =
-  | 'summary'
-  | 'experience'
-  | 'skills'
-  | 'generateSummary';
+  | 'enhance_summary'
+  | 'enhance_experience'
+  | 'optimize_skills'
+  | 'generate_summary'
+  | 'suggest_skills'
+  | 'unknown';
 
 export interface GenerateOptions {
   maxTokens?: number;
@@ -216,34 +218,114 @@ export interface GenerateOptions {
   type?: string;
 }
 
-export interface GenerationMetric {
+export interface ProgressUpdate {
+  progress: number;
+  status: string;
+}
+
+export type ProgressCallback = (update: ProgressUpdate) => void;
+
+export interface WebGPUSupportResult {
+  supported: boolean;
+  reason?: string;
+}
+
+export interface InitializationMetrics {
+  startTime: number | null;
+  endTime: number | null;
+  duration: number | null;
+  modelLoaded: string | null;
+  fromCache: boolean;
+}
+
+export interface GenerationMetricDetailed {
   timestamp: number;
   type: string;
   duration: number;
+  durationSeconds: string;
   tokensUsed: number;
+  promptTokens: number;
+  completionTokens: number;
   throughput: number;
-  cacheHit: boolean;
+  temperature: number;
+  maxTokens: number;
+  promptLength: number;
+  responseLength: number;
+}
+
+export interface LogEntry {
+  timestamp: string;
+  level: 'info' | 'warn' | 'error' | 'debug';
+  service: string;
+  message: string;
+  [key: string]: unknown;
 }
 
 export interface MemorySnapshot {
   timestamp: number;
-  heapUsed: number;
-  heapTotal: number;
-  external: number;
+  label: string;
+  usedJSHeapSize: number;
+  totalJSHeapSize: number;
+  jsHeapSizeLimit: number;
+}
+
+export interface ServiceMetrics {
+  initialization: InitializationMetrics;
+  generations: GenerationMetricDetailed[];
+  totalGenerations: number;
+  totalTokens: number;
+  cacheHits: number;
+  cacheMisses: number;
+  errors: LogEntry[];
+}
+
+export interface ServiceStatus {
+  isLoading: boolean;
+  isReady: boolean;
+  progress: number;
+  status: string;
+  model: string | null;
+  debug: boolean;
 }
 
 export interface MetricsSummary {
-  totalGenerations: number;
-  totalTokens: number;
-  averageThroughput: number;
-  cacheHitRate: number;
-  totalDuration: number;
-  averageDuration: number;
-  byType: Record<string, {
-    count: number;
-    tokens: number;
-    avgThroughput: number;
-  }>;
+  initialization: {
+    startTime: number | null;
+    endTime: number | null;
+    duration: number | null;
+    durationSeconds: string | null;
+    modelLoaded: string | null;
+    fromCache: boolean;
+  };
+  generations: {
+    total: number;
+    byType: Record<string, number>;
+    totalTokens: number;
+    avgGenerationTimeMs: string;
+    avgThroughputTokensPerSec: string;
+    recentGenerations: GenerationMetricDetailed[];
+  };
+  cache: {
+    hits: number;
+    misses: number;
+    hitRate: string;
+  };
+  errors: {
+    total: number;
+    recent: LogEntry[];
+  };
+  memory: {
+    snapshots: number;
+    recent: MemorySnapshot[];
+  };
+}
+
+export interface MetricsExport {
+  exportedAt: string;
+  status: ServiceStatus;
+  metrics: MetricsSummary;
+  allGenerations: GenerationMetricDetailed[];
+  memorySnapshots: MemorySnapshot[];
 }
 
 export interface AIEnhanceContext {

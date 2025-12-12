@@ -6,21 +6,8 @@
  */
 
 import { MATCH_VERDICTS } from '../data/constants';
+import type { MatchAnalysis, PrioritizedSkill, Job } from '../types';
 import { parseSkillsString } from './skillExtractor';
-
-/**
- * Match analysis result
- * @typedef {Object} MatchAnalysis
- * @property {number} matchPercentage - Percentage of job requirements matched (0-100)
- * @property {string} verdict - Human-readable verdict (e.g., "YES, APPLY!")
- * @property {string} verdictType - Machine-readable verdict type (yes/maybe/stretch/no)
- * @property {string} message - Short status message
- * @property {string} recommendation - Detailed recommendation
- * @property {string[]} matchingSkills - Skills that match between resume and job
- * @property {string[]} missingSkills - Job requirements not found in resume
- * @property {Object[]} prioritizedMissingSkills - Missing skills sorted by demand
- * @property {string[]} actionItems - Specific action items for the candidate
- */
 
 /**
  * Compares resume skills against job requirements
@@ -28,16 +15,20 @@ import { parseSkillsString } from './skillExtractor';
  * Uses fuzzy substring matching to handle variations in skill naming.
  * For example, "javascript" matches "JavaScript" and "React.js" matches "react".
  *
- * @param {string} resumeSkills - Comma-separated resume skills
- * @param {string} jobRequirements - Comma-separated job requirements
- * @param {Object[]} [allJobs=[]] - All jobs for skill demand calculation
- * @returns {MatchAnalysis} Detailed match analysis
+ * @param resumeSkills - Comma-separated resume skills
+ * @param jobRequirements - Comma-separated job requirements
+ * @param allJobs - All jobs for skill demand calculation
+ * @returns Detailed match analysis
  *
  * @example
  * compareSkills("React, Node.js, Python", "react, python, aws", [])
  * // Returns match analysis with 66% match
  */
-export const compareSkills = (resumeSkills, jobRequirements, allJobs = []) => {
+export const compareSkills = (
+  resumeSkills: string,
+  jobRequirements: string,
+  allJobs: Job[] = []
+): MatchAnalysis => {
   // Parse skills into normalized arrays
   const resumeSkillsArray = parseSkillsString(resumeSkills).map((s) =>
     s.toLowerCase()
@@ -75,7 +66,7 @@ export const compareSkills = (resumeSkills, jobRequirements, allJobs = []) => {
   const skillDemand = calculateSkillDemand(allJobs);
 
   // Prioritize missing skills by demand
-  const prioritizedMissingSkills = missingSkills
+  const prioritizedMissingSkills: PrioritizedSkill[] = missingSkills
     .map((skill) => ({
       skill,
       demand: skillDemand[skill] || 0,
@@ -102,10 +93,10 @@ export const compareSkills = (resumeSkills, jobRequirements, allJobs = []) => {
 
 /**
  * Calculates skill demand across all jobs
- * @param {Object[]} jobs - Array of job objects
- * @returns {Object} Map of skill names to occurrence counts
+ * @param jobs - Array of job objects
+ * @returns Map of skill names to occurrence counts
  */
-const calculateSkillDemand = (jobs) => {
+const calculateSkillDemand = (jobs: Job[]): Record<string, number> => {
   if (!jobs || jobs.length === 0) return {};
 
   const allSkills = jobs.flatMap((job) =>
@@ -115,21 +106,29 @@ const calculateSkillDemand = (jobs) => {
   return allSkills.reduce((acc, skill) => {
     acc[skill] = (acc[skill] || 0) + 1;
     return acc;
-  }, {});
+  }, {} as Record<string, number>);
 };
+
+interface VerdictDetails {
+  verdict: string;
+  verdictType: 'yes' | 'maybe' | 'stretch' | 'no';
+  message: string;
+  recommendation: string;
+  actionItems: string[];
+}
 
 /**
  * Generates verdict, message, and recommendations based on match percentage
- * @param {number} matchPercentage - Match percentage (0-100)
- * @param {string[]} matchingSkills - Matched skills
- * @param {Object[]} prioritizedMissingSkills - Missing skills with demand info
- * @returns {Object} Verdict details and action items
+ * @param matchPercentage - Match percentage (0-100)
+ * @param matchingSkills - Matched skills
+ * @param prioritizedMissingSkills - Missing skills with demand info
+ * @returns Verdict details and action items
  */
 const generateVerdict = (
-  matchPercentage,
-  matchingSkills,
-  prioritizedMissingSkills
-) => {
+  matchPercentage: number,
+  matchingSkills: string[],
+  prioritizedMissingSkills: PrioritizedSkill[]
+): VerdictDetails => {
   const topMissing = prioritizedMissingSkills.slice(0, 3).map((s) => s.skill);
 
   if (matchPercentage >= MATCH_VERDICTS.excellent.minPercent) {
@@ -145,7 +144,7 @@ const generateVerdict = (
         prioritizedMissingSkills.length > 0
           ? `Mention willingness to learn: ${topMissing.slice(0, 2).join(', ')}`
           : null,
-      ].filter(Boolean),
+      ].filter((item): item is string => item !== null),
     };
   }
 
@@ -195,9 +194,9 @@ const generateVerdict = (
 
 /**
  * Creates an empty match result for edge cases
- * @returns {MatchAnalysis} Empty match analysis
+ * @returns Empty match analysis
  */
-const createEmptyMatchResult = () => ({
+const createEmptyMatchResult = (): MatchAnalysis => ({
   matchPercentage: 0,
   verdict: 'N/A',
   verdictType: 'no',
@@ -211,11 +210,11 @@ const createEmptyMatchResult = () => ({
 
 /**
  * Calculates top trending skills across all jobs
- * @param {Object[]} jobs - Array of job objects
- * @param {number} limit - Maximum number of skills to return
- * @returns {Array<[string, number]>} Array of [skill, count] tuples
+ * @param jobs - Array of job objects
+ * @param limit - Maximum number of skills to return
+ * @returns Array of [skill, count] tuples
  */
-export const calculateTopSkills = (jobs, limit = 5) => {
+export const calculateTopSkills = (jobs: Job[], limit: number = 5): Array<[string, number]> => {
   if (!jobs || jobs.length === 0) return [];
 
   const skillDemand = calculateSkillDemand(jobs);
